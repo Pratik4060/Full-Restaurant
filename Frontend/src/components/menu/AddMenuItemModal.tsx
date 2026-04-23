@@ -100,97 +100,176 @@ export function AddMenuItemModal({ open, onClose }: { open: boolean; onClose: ()
   };
 
   const categoryOptions = mealCategoryOptions[form.type];
-  const activeSubCategories = subCategoryOptions[form.category] ?? [];
 
   return (
     <Modal open={open} onClose={onClose} title="Add Menu Item">
-      <form onSubmit={submit} className="space-y-4">
-        <div>
-          <label className="mb-1 block text-[11px] text-[#706a63]">Name</label>
-          <Input placeholder="Enter Menu Item Name" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} required />
-        </div>
-        <div>
-          <label className="mb-1 block text-[11px] text-[#706a63]">Description</label>
-          <Input placeholder="Description" value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} required />
-        </div>
-        <div>
-          <label className="mb-1 block text-[11px] text-[#706a63]">Image</label>
-          <div className="space-y-2 rounded-md border border-dashed border-[#d9ccb8] bg-[#fcfaf6] p-3">
+      <form onSubmit={submit} className="w-full max-w-[calc(100vw-56px)]">
+        <div className="space-y-4">
+          <div>
+            <label className="mb-1.5 block text-[11px] text-[#6b665f]">Name</label>
             <Input
-              ref={fileInputRef}
-              type="file"
-              accept="image/*"
-              onChange={(event) => void handleImageChange(event)}
-              className="h-auto bg-white px-2 py-1.5"
+              placeholder="Enter Menu Item Name"
+              value={form.name}
+              onChange={(e) => setForm({ ...form, name: e.target.value })}
+              className="h-10 rounded-[6px] border-[#ded9d1] bg-[#fafafa] px-3 text-[12px] placeholder:text-[#beb6ac]"
+              required
             />
-            <Input
-              placeholder="Paste image URL if you have one"
-              value={form.imageUrl}
-              onChange={(e) => setForm({ ...form, imageUrl: e.target.value })}
+          </div>
+
+          <div>
+            <label className="mb-1.5 block text-[11px] text-[#6b665f]">Description</label>
+            <textarea
+              placeholder="e.g T-1"
+              value={form.description}
+              onChange={(e) => setForm({ ...form, description: e.target.value })}
+              className="min-h-[70px] w-full rounded-[6px] border border-[#ded9d1] bg-[#fafafa] px-3 py-2 text-[12px] text-[#1f1f1f] outline-none transition placeholder:text-[#beb6ac] focus:border-brand-400 focus:bg-white"
+              required
             />
+          </div>
+
+          <div>
+            <label className="mb-1.5 block text-[11px] text-[#6b665f]">Upload image</label>
+            <div className="flex h-[92px] items-center justify-center rounded-[6px] border border-dashed border-[#e3cfa8] bg-white text-[#8f867d]">
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*"
+                onChange={(event) => void handleImageChange(event)}
+                className="hidden"
+              />
+              <button
+                type="button"
+                className="flex items-center gap-3 text-[13px] text-[#7f7568]"
+                onClick={() => fileInputRef.current?.click()}
+              >
+                <span className="flex h-7 w-7 items-center justify-center rounded-full border border-[#b7b0a6] text-[22px] leading-none">
+                  +
+                </span>
+                add
+              </button>
+            </div>
             {form.imageUrl ? (
               <img
                 src={form.imageUrl}
                 alt="Selected menu item"
-                className="h-32 w-full rounded-md border border-[#eadfce] object-cover"
+                className="mt-2 h-24 w-full rounded-[6px] border border-[#eadfce] object-cover"
               />
             ) : null}
           </div>
-        </div>
-        <div className="grid gap-3 md:grid-cols-2">
-          <div>
-            <label className="mb-1 block text-[11px] text-[#706a63]">Price</label>
-            <Input type="number" value={form.price} onChange={(e) => setForm({ ...form, price: Number(e.target.value) })} required />
+
+          <div className="grid gap-4 md:grid-cols-2">
+            <div>
+              <label className="mb-1.5 block text-[11px] text-[#6b665f]">Price</label>
+              <Input
+                type="number"
+                value={form.price}
+                onChange={(e) => setForm({ ...form, price: Number(e.target.value) })}
+                className="h-10 rounded-[6px] border-[#ded9d1] bg-[#fafafa] px-3 text-[12px]"
+                required
+              />
+            </div>
+            <div>
+              <label className="mb-1.5 block text-[11px] text-[#6b665f]">Prep Time (mins)</label>
+              <Input
+                type="number"
+                value={form.prepTimeMins}
+                onChange={(e) => setForm({ ...form, prepTimeMins: Number(e.target.value) })}
+                className="h-10 rounded-[6px] border-[#ded9d1] bg-[#fafafa] px-3 text-[12px]"
+                required
+              />
+            </div>
           </div>
-          <div>
-            <label className="mb-1 block text-[11px] text-[#706a63]">Prep Time (mins)</label>
-            <Input type="number" value={form.prepTimeMins} onChange={(e) => setForm({ ...form, prepTimeMins: Number(e.target.value) })} required />
+
+          <div className="grid gap-4 md:grid-cols-2">
+            <div>
+              <label className="mb-1.5 block text-[11px] text-[#6b665f]">Type</label>
+              <Select
+                value={form.type}
+                onChange={(e) => handleTypeChange(e.target.value as MealType)}
+                className="h-10 rounded-[6px] border-[#ded9d1] bg-[#fafafa] px-3 text-[12px]"
+              >
+                <option value="BREAKFAST">Breakfast</option>
+                <option value="LUNCH">Lunch</option>
+                <option value="DINNER">Dinner</option>
+              </Select>
+            </div>
+            <div>
+              <label className="mb-1.5 block text-[11px] text-[#6b665f]">Category</label>
+              <Select
+                value={form.category}
+                onChange={(e) => handleCategoryChange(e.target.value)}
+                className="h-10 rounded-[6px] border-[#ded9d1] bg-[#fafafa] px-3 text-[12px]"
+              >
+                {categoryOptions.map((category) => (
+                  <option key={category} value={category}>
+                    {category}
+                  </option>
+                ))}
+              </Select>
+            </div>
           </div>
-        </div>
-        <div className="grid gap-3 md:grid-cols-3">
-          <Select value={form.type} onChange={(e) => handleTypeChange(e.target.value as MealType)}>
-            <option value="BREAKFAST">Breakfast</option>
-            <option value="LUNCH">Lunch</option>
-            <option value="DINNER">Dinner</option>
-          </Select>
-          <Select value={form.category} onChange={(e) => handleCategoryChange(e.target.value)}>
-            {categoryOptions.map((category) => (
-              <option key={category} value={category}>
-                {category}
-              </option>
-            ))}
-          </Select>
-          <Select value={form.diet} onChange={(e) => setForm({ ...form, diet: e.target.value as DietType })}>
-            <option value="VEG">Veg</option>
-            <option value="NON_VEG">Non Veg</option>
-            <option value="BEVERAGE">Beverage</option>
-          </Select>
-        </div>
-        <div className="grid gap-3 md:grid-cols-2">
-          <Select
-            value={form.subCategory}
-            onChange={(e) => setForm({ ...form, subCategory: e.target.value })}
-            disabled={activeSubCategories.length === 0}
-          >
-            <option value="">{activeSubCategories.length === 0 ? "No subcategory" : "Select subcategory"}</option>
-            {activeSubCategories.map((subCategory) => (
-              <option key={subCategory} value={subCategory}>
-                {subCategory}
-              </option>
-            ))}
-          </Select>
-          <label className="flex items-center gap-2 rounded-md border border-[#eadfce] px-3 py-2 text-[12px] text-[#5f5a53]">
+
+          <div className="flex items-center gap-4 pt-1">
+            <button
+              type="button"
+              onClick={() => setForm({ ...form, diet: "VEG" })}
+              className="inline-flex items-center gap-2 text-[13px] text-[#1f1f1f]"
+            >
+              <span
+                className="flex h-5 w-5 items-center justify-center rounded-full border"
+                style={{ borderColor: form.diet === "VEG" ? "#35b935" : "#b7b0a6" }}
+              >
+                <span
+                  className="h-3 w-3 rounded-full"
+                  style={{ backgroundColor: form.diet === "VEG" ? "#35b935" : "transparent" }}
+                />
+              </span>
+              Veg
+            </button>
+            <button
+              type="button"
+              onClick={() => setForm({ ...form, diet: "NON_VEG" })}
+              className="inline-flex items-center gap-2 text-[13px] text-[#1f1f1f]"
+            >
+              <span
+                className="flex h-5 w-5 items-center justify-center rounded-full border"
+                style={{ borderColor: form.diet === "NON_VEG" ? "#35b935" : "#b7b0a6" }}
+              >
+                <span
+                  className="h-3 w-3 rounded-full"
+                  style={{ backgroundColor: form.diet === "NON_VEG" ? "#35b935" : "transparent" }}
+                />
+              </span>
+              Non Veg
+            </button>
+          </div>
+
+          <label className="flex items-center gap-2 pt-1 text-[11px] text-[#6f685f]">
             <input
               type="checkbox"
-              checked={form.isBestseller}
-              onChange={(e) => setForm({ ...form, isBestseller: e.target.checked })}
+              checked={form.isAvailable}
+              onChange={(e) => setForm({ ...form, isAvailable: e.target.checked })}
+              className="h-4 w-4 accent-[#d2a55f]"
             />
-            Mark as bestseller
+            Available for ordering
           </label>
-        </div>
-        <div className="flex justify-end gap-2 pt-2">
-          <Button type="button" variant="secondary" className="min-w-28" onClick={onClose}>Cancel</Button>
-          <Button type="submit" className="min-w-32">Create</Button>
+
+          <div className="grid gap-4 pt-2 md:grid-cols-2">
+            <Button
+              type="button"
+              variant="secondary"
+              className="h-10 rounded-[6px] border-[#efc98f] bg-white text-[13px] font-medium text-[#c79d67] hover:bg-[#fffaf2]"
+              onClick={onClose}
+            >
+              Cancel
+            </Button>
+            <Button
+              type="submit"
+              className="h-10 rounded-[6px] border-[#9a742f] bg-[#9a742f] text-[13px] font-medium text-white hover:border-[#866426] hover:bg-[#866426]"
+            >
+              Create
+            </Button>
+          </div>
         </div>
       </form>
     </Modal>

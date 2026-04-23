@@ -1,5 +1,5 @@
 import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
-import { offersApi, type CreateOfferPayload } from "../../services/offerApi";
+import { offersApi, type CreateOfferPayload, type UpdateOfferPayload } from "../../services/offerApi";
 import type { Offer } from "../../types/api";
 
 interface OffersState {
@@ -35,11 +35,34 @@ export const createOfferThunk = createAsyncThunk(
   }
 );
 
+export const updateOfferThunk = createAsyncThunk(
+  "offers/update",
+  async (payload: { id: string; data: UpdateOfferPayload }, { rejectWithValue }) => {
+    try {
+      return await offersApi.update(payload.id, payload.data);
+    } catch (error) {
+      return rejectWithValue((error as Error).message);
+    }
+  }
+);
+
 export const toggleOfferThunk = createAsyncThunk(
   "offers/toggle",
   async (payload: { id: string; isActive: boolean }, { rejectWithValue }) => {
     try {
       return await offersApi.update(payload.id, { isActive: payload.isActive });
+    } catch (error) {
+      return rejectWithValue((error as Error).message);
+    }
+  }
+);
+
+export const deleteOfferThunk = createAsyncThunk(
+  "offers/delete",
+  async (id: string, { rejectWithValue }) => {
+    try {
+      await offersApi.remove(id);
+      return id;
     } catch (error) {
       return rejectWithValue((error as Error).message);
     }
@@ -74,6 +97,13 @@ const offersSlice = createSlice({
       .addCase(toggleOfferThunk.fulfilled, (state, action) => {
         const idx = state.list.findIndex((x) => x.id === action.payload.id);
         if (idx >= 0) state.list[idx] = { ...state.list[idx], ...action.payload };
+      })
+      .addCase(updateOfferThunk.fulfilled, (state, action) => {
+        const idx = state.list.findIndex((x) => x.id === action.payload.id);
+        if (idx >= 0) state.list[idx] = { ...state.list[idx], ...action.payload };
+      })
+      .addCase(deleteOfferThunk.fulfilled, (state, action) => {
+        state.list = state.list.filter((offer) => offer.id !== action.payload);
       });
   },
 });

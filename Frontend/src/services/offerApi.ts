@@ -22,4 +22,7 @@ export const offersApi = {
   update(id: string, payload: UpdateOfferPayload) {
     return http<Offer>(`/offers/${id}`, { method: "PUT", body: payload });
   },
+  remove(id: string) {
+    return http<void>(`/offers/${id}`, { method: "DELETE" });
+  },
 };

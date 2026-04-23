@@ -81,7 +81,14 @@ const ordersSlice = createSlice({
       })
       .addCase(updateOrderStatusThunk.fulfilled, (state, action) => {
         const idx = state.list.findIndex((o) => o.id === action.payload.id);
-        if (idx >= 0) state.list[idx] = { ...state.list[idx], ...action.payload };
+        if (idx >= 0) {
+          const current = state.list[idx];
+          state.list[idx] = {
+            ...current,
+            ...action.payload,
+            items: action.payload.items?.length ? action.payload.items : current.items,
+          };
+        }
       });
   },
 });

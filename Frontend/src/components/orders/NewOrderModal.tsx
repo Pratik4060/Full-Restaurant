@@ -1,10 +1,28 @@
-import { useMemo, useState, type FormEvent } from "react";
+import { useEffect, useMemo, useState, type FormEvent } from "react";
 import { useAppDispatch, useAppSelector } from "../../app/hooks";
 import { createOrderThunk } from "../../features/orders/ordersSlice";
+import type { MenuItem } from "../../types/api";
 import { Button } from "../ui/Button";
 import { Input } from "../ui/Input";
 import { Modal } from "../ui/Modal";
-import { Select } from "../ui/Select";
+
+type OrderItemDraft = {
+  id: string;
+  query: string;
+  menuItemId: string;
+  quantity: number;
+  open: boolean;
+};
+
+const newDraft = (): OrderItemDraft => ({
+  id: crypto.randomUUID(),
+  query: "",
+  menuItemId: "",
+  quantity: 1,
+  open: false,
+});
+
+const formatCurrency = (value: number) => `₹${new Intl.NumberFormat("en-IN", { maximumFractionDigits: 0 }).format(value)}`;
 
 export function NewOrderModal({ open, onClose }: { open: boolean; onClose: () => void }) {
   const dispatch = useAppDispatch();
@@ -12,25 +30,54 @@ export function NewOrderModal({ open, onClose }: { open: boolean; onClose: () =>
 
   const [customerName, setCustomerName] = useState("");
   const [tableNumber, setTableNumber] = useState("");
-  const [guestCount, setGuestCount] = useState(1);
-  const [menuItemId, setMenuItemId] = useState("");
-  const [quantity, setQuantity] = useState(1);
+  const [drafts, setDrafts] = useState<OrderItemDraft[]>([newDraft()]);
 
-  const selectedItemName = useMemo(
-    () => menuItems.find((x) => x.id === menuItemId)?.name ?? "",
-    [menuItems, menuItemId]
+  useEffect(() => {
+    if (!open) return;
+    setCustomerName("");
+    setTableNumber("");
+    setDrafts([newDraft()]);
+  }, [open]);
+
+  const resolvedDrafts = useMemo(
+    () =>
+      drafts.map((draft) => {
+        const filteredItems = draft.query.trim()
+          ? menuItems.filter((item) =>
+              item.name.toLowerCase().includes(draft.query.toLowerCase()) ||
+              item.category.toLowerCase().includes(draft.query.toLowerCase())
+            )
+          : menuItems.slice(0, 6);
+        const matchedItem = menuItems.find((item) => item.id === draft.menuItemId) ?? null;
+        return { ...draft, filteredItems, matchedItem };
+      }),
+    [drafts, menuItems]
   );
+
+  const updateDraft = (id: string, patch: Partial<OrderItemDraft>) => {
+    setDrafts((current) => current.map((draft) => (draft.id === id ? { ...draft, ...patch } : draft)));
+  };
+
+  const addDraft = () => setDrafts((current) => [...current, newDraft()]);
+
+  const removeDraft = (id: string) => {
+    setDrafts((current) => (current.length > 1 ? current.filter((draft) => draft.id !== id) : current));
+  };
 
   const submit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    if (!menuItemId) return;
+    const items = drafts
+      .filter((draft) => draft.menuItemId && draft.quantity > 0)
+      .map((draft) => ({ menuItemId: draft.menuItemId, quantity: draft.quantity }));
+
+    if (!customerName.trim() || !tableNumber.trim() || items.length === 0) return;
 
     await dispatch(
       createOrderThunk({
         customerName,
         tableNumber,
-        guestCount,
-        items: [{ menuItemId, quantity }],
+        guestCount: 1,
+        items,
       })
     );
 
@@ -39,46 +86,129 @@ export function NewOrderModal({ open, onClose }: { open: boolean; onClose: () =>
 
   return (
     <Modal open={open} onClose={onClose} title="Create New Order">
-      <form onSubmit={submit} className="space-y-4">
-        <div className="grid gap-3 md:grid-cols-2">
+      <form onSubmit={submit} className="space-y-8">
+        <div className="grid gap-5 md:grid-cols-2">
           <div>
-            <label className="mb-1 block text-[11px] text-[#706a63]">Customer Name</label>
-            <Input value={customerName} onChange={(e) => setCustomerName(e.target.value)} placeholder="Enter Customer Name" required />
+            <label className="mb-2 block text-[12px] font-medium text-[#2d2721]">Customer Name</label>
+            <Input
+              value={customerName}
+              onChange={(e) => setCustomerName(e.target.value)}
+              placeholder="Enter Customer Name"
+              className="h-9 rounded-[6px] border-[#ded4c8] bg-[#f7f7f7] px-4 text-[12px] placeholder:text-[#b4ada6]"
+              required
+            />
           </div>
           <div>
-            <label className="mb-1 block text-[11px] text-[#706a63]">Table Number</label>
-            <Input value={tableNumber} onChange={(e) => setTableNumber(e.target.value)} placeholder="e.g. T-1" required />
+            <label className="mb-2 block text-[12px] font-medium text-[#2d2721]">Table Number</label>
+            <Input
+              value={tableNumber}
+              onChange={(e) => setTableNumber(e.target.value)}
+              placeholder="e.g T-1"
+              className="h-9 rounded-[6px] border-[#ded4c8] bg-[#f7f7f7] px-4 text-[12px] placeholder:text-[#b4ada6]"
+              required
+            />
           </div>
         </div>
 
-        <div className="grid gap-3 md:grid-cols-2">
-          <div>
-            <label className="mb-1 block text-[11px] text-[#706a63]">Guest Count</label>
-            <Input type="number" min={1} value={guestCount} onChange={(e) => setGuestCount(Number(e.target.value))} required />
-          </div>
-          <div>
-            <label className="mb-1 block text-[11px] text-[#706a63]">Quantity</label>
-            <Input type="number" min={1} value={quantity} onChange={(e) => setQuantity(Number(e.target.value))} required />
-          </div>
+        <div className="flex justify-end">
+          <button
+            type="button"
+            onClick={addDraft}
+            className="inline-flex items-center gap-2 text-[13px] font-medium text-[#c79d67] transition hover:text-[#ad7d41]"
+          >
+            <span>Add Item</span>
+            <span className="text-[22px] leading-none">+</span>
+          </button>
         </div>
 
-        <div>
-          <label className="mb-1 block text-[11px] text-[#706a63]">Order Item</label>
-          <Select value={menuItemId} onChange={(e) => setMenuItemId(e.target.value)} required>
-            <option value="">Select menu item</option>
-            {menuItems.map((item) => (
-              <option key={item.id} value={item.id}>
-                {item.name} - Rs. {item.price}
-              </option>
-            ))}
-          </Select>
+        <div className="space-y-5">
+          {resolvedDrafts.map((draft, index) => {
+            const selectedItem = draft.matchedItem;
+            return (
+              <div key={draft.id} className="grid gap-4 md:grid-cols-[1fr_120px_36px] md:items-end">
+                <div className="relative">
+                  <label className="mb-2 block text-[12px] font-medium text-[#2d2721]">Order Items</label>
+                  <Input
+                    value={draft.query}
+                    onChange={(e) =>
+                      updateDraft(draft.id, {
+                        query: e.target.value,
+                        menuItemId: "",
+                        open: true,
+                      })
+                    }
+                    onFocus={() => updateDraft(draft.id, { open: true })}
+                    placeholder="Search by order"
+                    className="h-9 rounded-[6px] border-[#ded4c8] bg-[#f7f7f7] px-4 text-[12px] placeholder:text-[#b4ada6]"
+                  />
+
+                  {draft.open ? (
+                    <div className="absolute z-20 mt-2 w-full rounded-[12px] border border-[#ded7cc] bg-white shadow-[0_12px_24px_rgba(44,33,18,0.08)]">
+                      {(draft.filteredItems.length > 0 ? draft.filteredItems : ([] as MenuItem[])).slice(0, 6).map((item) => (
+                        <button
+                          key={item.id}
+                          type="button"
+                          onClick={() =>
+                            updateDraft(draft.id, {
+                              menuItemId: item.id,
+                              query: item.name,
+                              open: false,
+                            })
+                          }
+                          className="flex w-full items-center justify-between border-b border-[#f4eee4] px-4 py-2.5 text-left text-[12px] text-[#2b2621] last:border-b-0 hover:bg-[#fbf7f1]"
+                        >
+                          <span>{item.name}</span>
+                          <span className="text-[#9d8f7f]">{formatCurrency(item.price)}</span>
+                        </button>
+                      ))}
+                      {draft.filteredItems.length === 0 ? (
+                        <div className="px-4 py-3 text-[12px] text-[#9d8f7f]">No items found</div>
+                      ) : null}
+                    </div>
+                  ) : null}
+
+                  {selectedItem ? <p className="mt-2 text-[10px] text-[#8a847d]">Selected: {selectedItem.name}</p> : null}
+                </div>
+
+                <div>
+                  <label className="mb-2 block text-[12px] font-medium text-[#2d2721]">Order Items</label>
+                  <Input
+                    type="number"
+                    min={1}
+                    value={draft.quantity}
+                    onChange={(e) => updateDraft(draft.id, { quantity: Number(e.target.value || 1) })}
+                    className="h-9 rounded-[6px] border-[#ded4c8] bg-white px-4 text-[12px]"
+                  />
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() => removeDraft(draft.id)}
+                  className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-[#ffb1b1] text-[18px] leading-none text-[#ff4f4f] transition hover:bg-[#fff5f5]"
+                  aria-label={`Remove item ${index + 1}`}
+                >
+                  ×
+                </button>
+              </div>
+            );
+          })}
         </div>
 
-        {selectedItemName && <p className="text-[11px] text-[#6f6a63]">Selected: {selectedItemName}</p>}
-
-        <div className="flex justify-end gap-2 pt-2">
-          <Button type="button" variant="secondary" className="min-w-28" onClick={onClose}>Cancel</Button>
-          <Button type="submit" className="min-w-32">Create Order</Button>
+        <div className="grid gap-4 pt-3 md:grid-cols-[1fr_1fr]">
+          <Button
+            type="button"
+            variant="secondary"
+            className="h-10 rounded-[10px] border-[#efc98f] bg-white text-[14px] font-medium text-[#c79d67] hover:bg-[#fffaf2]"
+            onClick={onClose}
+          >
+            Cancel
+          </Button>
+          <Button
+            type="submit"
+            className="h-10 rounded-[10px] border-[#9a742f] bg-[#9a742f] text-[14px] font-medium text-white hover:border-[#866426] hover:bg-[#866426]"
+          >
+            Create Order
+          </Button>
         </div>
       </form>
     </Modal>
