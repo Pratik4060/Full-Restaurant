@@ -26,6 +26,13 @@ const revenuePeriodLabels: Record<RevenuePeriod, string> = {
   yearly: "Revenue (Last 12 Months)",
 };
 
+const dashboardCardIcons = {
+  orders: "/assets/Dashboard/TodaysOrder.svg",
+  revenue: "/assets/Dashboard/TodaysRevenue.svg",
+  pending: "/assets/Dashboard/PendingOrders.svg",
+  customers: "/assets/Dashboard/Total%20Customers.svg",
+} as const;
+
 const pieOrder: OrderStatusPoint["status"][] = ["PREPARING", "PENDING", "COMPLETED", "READY"];
 
 const compactCurrency = new Intl.NumberFormat("en-IN", { notation: "compact", maximumFractionDigits: 1 });
@@ -76,6 +83,12 @@ const describeArc = (
 };
 
 function RevenueChart({ points, period }: { points: RevenuePoint[]; period: RevenuePeriod }) {
+  const [hoveredPoint, setHoveredPoint] = useState<{
+    x: number;
+    y: number;
+    label: string;
+    revenue: number;
+  } | null>(null);
   const width = 640;
   const height = 320;
   const padding = { top: 20, right: 22, bottom: 42, left: 48 };
@@ -101,34 +114,16 @@ function RevenueChart({ points, period }: { points: RevenuePoint[]; period: Reve
           .join(" ")
       : "";
 
-  const peakPoint = coords.reduce<{ x: number; y: number; label: string; revenue: number } | null>(
-    (best, point) => {
-      if (!best || point.revenue > best.revenue) {
-        return {
-          x: point.x,
-          y: point.y,
-          label: point.label,
-          revenue: point.revenue,
-        };
-      }
-      return best;
-    },
-    null
-  );
-
   if (points.length === 0) {
     return (
-      <div className="flex h-[320px] items-center justify-center rounded-[18px] border border-[#f0e9df] bg-[#fffdf9] text-[12px] text-[#7f7971]">
+      <div className="flex h-[320px] items-center justify-center rounded-[18px] border border-[#f0e9df] bg-white text-[12px] text-[#7f7971]">
         No revenue data available
       </div>
     );
   }
 
-  const tooltipX = peakPoint ? Math.min(Math.max(peakPoint.x - 48, 88), 340) : 88;
-  const tooltipY = peakPoint ? Math.max(18, peakPoint.y - 66) : 18;
-
   return (
-    <div className="relative rounded-[18px] bg-[#fffdf9] px-2 pb-2 pt-1">
+    <div className="relative rounded-[18px] bg-white px-2 pb-2 pt-1">
       <svg viewBox={`0 0 ${width} ${height}`} className="h-[320px] w-full overflow-visible">
         {gridTicks.map((tick) => {
           const y = padding.top + (1 - tick / axisMax) * innerHeight;
@@ -156,7 +151,18 @@ function RevenueChart({ points, period }: { points: RevenuePoint[]; period: Reve
         )}
 
         {coords.map((point) => (
-          <g key={point.label}>
+          <g
+            key={point.label}
+            onMouseEnter={() =>
+              setHoveredPoint({
+                x: point.x,
+                y: point.y,
+                label: point.label,
+                revenue: point.revenue,
+              })
+            }
+            onMouseLeave={() => setHoveredPoint(null)}
+          >
             <circle cx={point.x} cy={point.y} r="3.5" fill="#ffffff" stroke="#ff7a1a" strokeWidth="2" />
             <text x={point.x} y={height - 12} textAnchor="middle" className="fill-[#8a847d] text-[10px]">
               {point.label}
@@ -165,13 +171,16 @@ function RevenueChart({ points, period }: { points: RevenuePoint[]; period: Reve
         ))}
       </svg>
 
-      {peakPoint ? (
+      {hoveredPoint ? (
         <div
           className="absolute z-10 rounded-[3px] border border-[#ece6dc] bg-white px-4 py-3 shadow-[0_10px_26px_rgba(0,0,0,0.08)]"
-          style={{ left: `${tooltipX}px`, top: `${tooltipY}px` }}
+          style={{
+            left: `${Math.min(Math.max(hoveredPoint.x - 48, 88), 340)}px`,
+            top: `${Math.max(18, hoveredPoint.y - 66)}px`,
+          }}
         >
-          <p className="text-[12px] font-medium text-[#1f1f1f]">{peakPoint.label}</p>
-          <p className="mt-2 text-[12px] text-[#1f1f1f]">Revenue : ₹{currency.format(peakPoint.revenue)}</p>
+          <p className="text-[12px] font-medium text-[#1f1f1f]">{hoveredPoint.label}</p>
+          <p className="mt-2 text-[12px] text-[#1f1f1f]">Revenue : ₹{currency.format(hoveredPoint.revenue)}</p>
         </div>
       ) : null}
 
@@ -269,7 +278,7 @@ function StatusPieChart({ items }: { items: OrderStatusPoint[] }) {
   });
 
   return (
-    <div className="relative h-[360px] overflow-visible rounded-[24px] bg-[#fffaf2]">
+    <div className="relative h-[360px] overflow-visible rounded-[24px] bg-white">
       <svg viewBox={`0 0 ${width} ${height}`} className="absolute inset-0 h-full w-full overflow-visible">
         {total === 0 ? (
           <circle cx={cx} cy={cy} r={radius} fill="#f3ece1" />
@@ -348,10 +357,34 @@ export function DashboardPage() {
       <PageHeader title="Dashboard" subtitle="Welcome back, Admin User" />
 
       <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-        <MetricCard title="Today's Orders" value={`${summary?.todaysOrders ?? 0}`} note={`${completedCount} completed`} />
-        <MetricCard title="Today's Revenue" value={`Rs. ${summary?.todaysRevenue ?? 0}`} note={`${revenue?.points.length ?? 0} points`} />
-        <MetricCard title="Pending Orders" value={`${summary?.pendingOrders ?? 0}`} note={`${pendingCount} awaiting action`} />
-        <MetricCard title="Total Customers" value={`${summary?.totalCustomers ?? 0}`} note="Live customer records" />
+        <MetricCard
+          title="Today's Orders"
+          value={`${summary?.todaysOrders ?? 0}`}
+          note={`${completedCount} completed`}
+          icon={dashboardCardIcons.orders}
+          noteClassName="text-[#31bf4d]"
+        />
+        <MetricCard
+          title="Today's Revenue"
+          value={`Rs. ${summary?.todaysRevenue ?? 0}`}
+          note={`${revenue?.points.length ?? 0} points`}
+          icon={dashboardCardIcons.revenue}
+          noteClassName="text-[#31bf4d]"
+        />
+        <MetricCard
+          title="Pending Orders"
+          value={`${summary?.pendingOrders ?? 0}`}
+          note={`${pendingCount} awaiting action`}
+          icon={dashboardCardIcons.pending}
+          noteClassName="text-[#ff5e5e]"
+        />
+        <MetricCard
+          title="Total Customers"
+          value={`${summary?.totalCustomers ?? 0}`}
+          note="Live customer records"
+          icon={dashboardCardIcons.customers}
+          noteClassName="text-[#5b67ff]"
+        />
       </section>
 
       <section className="grid gap-6 xl:grid-cols-[1.35fr_1fr]">
@@ -361,7 +394,7 @@ export function DashboardPage() {
             <Select
               value={revenuePeriod}
               onChange={(e) => dispatch(setRevenuePeriod(e.target.value as RevenuePeriod))}
-              className="h-10 w-28 rounded-lg border-[#dad3ca] bg-white text-[12px]"
+              className="!h-8 !w-[116px] !rounded-[6px] !border-[#dad3ca] !bg-white !px-3 !pr-8 text-[12px]"
             >
               <option value="weekly">Weekly</option>
               <option value="monthly">Monthly</option>
@@ -448,18 +481,18 @@ export function DashboardPage() {
           </div>
         </div>
 
-        <div className="rounded-[16px] border border-[#f0e9df] bg-[#fffdf9] px-5 pb-5 pt-4">
-          <div className="relative h-[306px]">
-            <svg viewBox="0 0 760 306" className="h-full w-full overflow-visible">
-              <line x1="48" y1="22" x2="48" y2="248" stroke="#cfc7bd" strokeWidth="1.2" />
-              <line x1="48" y1="248" x2="744" y2="248" stroke="#cfc7bd" strokeWidth="1.2" />
+        <div className="rounded-[16px] border border-[#f0e9df] bg-white px-4 pb-4 pt-4">
+          <div className="relative h-[312px]">
+            <svg viewBox="0 0 860 306" className="h-full w-full overflow-visible">
+              <line x1="52" y1="22" x2="52" y2="248" stroke="#cfc7bd" strokeWidth="1.2" />
+              <line x1="52" y1="248" x2="832" y2="248" stroke="#cfc7bd" strokeWidth="1.2" />
 
               {[100, 75, 50, 25, 0].map((tick) => {
                 const y = 22 + ((100 - tick) / 100) * 226;
                 return (
                   <g key={tick}>
-                    <line x1="48" x2="744" y1={y} y2={y} stroke="#d8d2c8" strokeDasharray="2.5 4" strokeWidth="1" />
-                    <text x="34" y={y + 4} textAnchor="end" className="fill-[#8a847d] text-[11px]">
+                    <line x1="52" x2="832" y1={y} y2={y} stroke="#d8d2c8" strokeDasharray="2.5 4" strokeWidth="1" />
+                    <text x="38" y={y + 4} textAnchor="end" className="fill-[#8a847d] text-[11px]">
                       {tick}
                     </text>
                   </g>
@@ -470,11 +503,15 @@ export function DashboardPage() {
                 ? selectedPopularRows
                 : [{ menuItemId: "empty", name: "No items", diet: "VEG", likes: 0 }]).map((item, index) => {
                 const values = selectedPopularRows.length > 0 ? selectedPopularRows : [];
-                const slotWidth = 696 / Math.max(values.length || 1, 1);
-                const barWidth = Math.min(44, Math.max(36, slotWidth * 0.28));
-                const barX = 48 + slotWidth * index + slotWidth / 2 - barWidth / 2;
-                const barHeight = selectedPopularRows.length > 0 ? Math.max(10, (item.likes / popularAxisMax) * 188) : 0;
-                const barTop = 248 - barHeight;
+                const plotLeft = 56;
+                const plotRight = 14;
+                const plotBottom = 248;
+                const plotWidth = 860 - plotLeft - plotRight;
+                const slotWidth = plotWidth / Math.max(values.length || 1, 1);
+                const barWidth = Math.min(52, Math.max(42, slotWidth * 0.25));
+                const barX = plotLeft + slotWidth * index + slotWidth / 2 - barWidth / 2;
+                const barHeight = selectedPopularRows.length > 0 ? Math.max(10, (item.likes / popularAxisMax) * 186) : 0;
+                const barTop = plotBottom - barHeight;
                 const isHovered = hoveredPopularIndex === index;
                 const tooltipWidth = 78;
                 const tooltipHeight = 32;
@@ -528,7 +565,7 @@ export function DashboardPage() {
                       fill={popularGroupColors[popularGroup]}
                     />
 
-                    <text x={barX + barWidth / 2} y={270} textAnchor="middle" className="fill-[#4c4741] text-[11px]">
+                    <text x={barX + barWidth / 2} y={272} textAnchor="middle" className="fill-[#4c4741] text-[11px]">
                       {labelLines.length === 1 ? (
                         <tspan x={barX + barWidth / 2} dy="0">
                           {labelLines[0]}

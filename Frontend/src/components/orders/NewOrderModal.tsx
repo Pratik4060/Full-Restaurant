@@ -94,7 +94,7 @@ export function NewOrderModal({ open, onClose }: { open: boolean; onClose: () =>
               value={customerName}
               onChange={(e) => setCustomerName(e.target.value)}
               placeholder="Enter Customer Name"
-              className="h-9 rounded-[6px] border-[#ded4c8] bg-[#f7f7f7] px-4 text-[12px] placeholder:text-[#b4ada6]"
+              className="h-9 rounded-[6px] border-[#ded4c8] bg-[#f7f7f7] px-3 text-[12px] placeholder:text-[#b4ada6]"
               required
             />
           </div>
@@ -104,7 +104,7 @@ export function NewOrderModal({ open, onClose }: { open: boolean; onClose: () =>
               value={tableNumber}
               onChange={(e) => setTableNumber(e.target.value)}
               placeholder="e.g T-1"
-              className="h-9 rounded-[6px] border-[#ded4c8] bg-[#f7f7f7] px-4 text-[12px] placeholder:text-[#b4ada6]"
+              className="h-9 rounded-[6px] border-[#ded4c8] bg-[#f7f7f7] px-3 text-[12px] placeholder:text-[#b4ada6]"
               required
             />
           </div>
@@ -123,10 +123,9 @@ export function NewOrderModal({ open, onClose }: { open: boolean; onClose: () =>
 
         <div className="space-y-5">
           {resolvedDrafts.map((draft, index) => {
-            const selectedItem = draft.matchedItem;
             return (
-              <div key={draft.id} className="grid gap-4 md:grid-cols-[1fr_120px_36px] md:items-end">
-                <div className="relative">
+              <div key={draft.id} className="grid gap-4 md:grid-cols-[minmax(0,1fr)_96px_auto] md:items-end">
+                <div className="relative min-w-0">
                   <label className="mb-2 block text-[12px] font-medium text-[#2d2721]">Order Items</label>
                   <Input
                     value={draft.query}
@@ -139,7 +138,7 @@ export function NewOrderModal({ open, onClose }: { open: boolean; onClose: () =>
                     }
                     onFocus={() => updateDraft(draft.id, { open: true })}
                     placeholder="Search by order"
-                    className="h-9 rounded-[6px] border-[#ded4c8] bg-[#f7f7f7] px-4 text-[12px] placeholder:text-[#b4ada6]"
+                    className="h-9 rounded-[6px] border-[#ded4c8] bg-[#f7f7f7] px-3 text-[12px] placeholder:text-[#b4ada6]"
                   />
 
                   {draft.open ? (
@@ -167,24 +166,23 @@ export function NewOrderModal({ open, onClose }: { open: boolean; onClose: () =>
                     </div>
                   ) : null}
 
-                  {selectedItem ? <p className="mt-2 text-[10px] text-[#8a847d]">Selected: {selectedItem.name}</p> : null}
                 </div>
 
-                <div>
-                  <label className="mb-2 block text-[12px] font-medium text-[#2d2721]">Order Items</label>
+                <div className="md:w-[96px]">
+                  <label className="mb-2 block text-[12px] font-medium text-[#2d2721]">Quantity</label>
                   <Input
                     type="number"
                     min={1}
                     value={draft.quantity}
                     onChange={(e) => updateDraft(draft.id, { quantity: Number(e.target.value || 1) })}
-                    className="h-9 rounded-[6px] border-[#ded4c8] bg-white px-4 text-[12px]"
+                    className="h-9 rounded-[6px] border-[#ded4c8] bg-white px-3 text-[12px]"
                   />
                 </div>
 
                 <button
                   type="button"
                   onClick={() => removeDraft(draft.id)}
-                  className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-[#ffb1b1] text-[18px] leading-none text-[#ff4f4f] transition hover:bg-[#fff5f5]"
+                  className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-[#ffb1b1] text-[18px] leading-none text-[#ff4f4f] transition hover:bg-[#fff5f5] md:mb-[1px]"
                   aria-label={`Remove item ${index + 1}`}
                 >
                   ×
@@ -194,18 +192,18 @@ export function NewOrderModal({ open, onClose }: { open: boolean; onClose: () =>
           })}
         </div>
 
-        <div className="grid gap-4 pt-3 md:grid-cols-[1fr_1fr]">
+        <div className="grid gap-4 pt-2 md:grid-cols-[1fr_1fr]">
           <Button
             type="button"
             variant="secondary"
-            className="h-10 rounded-[10px] border-[#efc98f] bg-white text-[14px] font-medium text-[#c79d67] hover:bg-[#fffaf2]"
+            className="h-10 rounded-[8px] border-[#efc98f] bg-white text-[14px] font-medium text-[#c79d67] hover:bg-[#fffaf2]"
             onClick={onClose}
           >
             Cancel
           </Button>
           <Button
             type="submit"
-            className="h-10 rounded-[10px] border-[#9a742f] bg-[#9a742f] text-[14px] font-medium text-white hover:border-[#866426] hover:bg-[#866426]"
+            className="h-10 rounded-[8px] border-[#9a742f] bg-[#9a742f] text-[14px] font-medium text-white hover:border-[#866426] hover:bg-[#866426]"
           >
             Create Order
           </Button>

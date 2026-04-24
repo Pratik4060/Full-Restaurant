@@ -55,20 +55,20 @@ export function OrderCard({ order }: { order: Order }) {
   const primaryClassName = order.status ? primaryActionStyles[order.status] ?? "" : "";
 
   return (
-    <div className="rounded-[18px] border border-[#ece4d8] bg-white px-5 py-5 shadow-[0_5px_16px_rgba(44,33,18,0.06)]">
-      <div className="mb-5 flex items-start justify-between gap-3">
+    <div className="flex h-full min-h-[414px] w-full flex-col rounded-[18px] border border-[#ece4d8] bg-white px-6 py-6 shadow-[0_5px_16px_rgba(44,33,18,0.06)]">
+      <div className="mb-4 flex items-start justify-between gap-3">
         <p className="text-[12px] font-medium tracking-wide text-[#23211f]">{order.orderNumber}</p>
         <StatusBadge status={order.status} />
       </div>
 
-      <div className="space-y-1">
+      <div className="space-y-1.5">
         <p className="text-[14px] font-medium text-[#22201d]">{order.customerName}</p>
         <p className="text-[12px] text-[#4f4a44]">Table: {order.tableNumber}</p>
       </div>
 
       <div className="my-4 border-t border-[#d7d1c7]" />
 
-      <div className="space-y-4 text-[12px]">
+      <div className="space-y-3 text-[12px]">
         {order.items.map((item) => (
           <div key={item.id} className="flex items-start justify-between gap-4 text-[#2d2925]">
             <span className="pr-2 leading-6">
@@ -93,7 +93,7 @@ export function OrderCard({ order }: { order: Order }) {
         <p>Updated: {formatDateTime(order.updatedAt)}</p>
       </div>
 
-      <div className="mt-5 flex gap-4">
+      <div className="mt-auto flex gap-4 pt-5">
         {primaryNext && (
           <Button
             onClick={() => void dispatch(updateOrderStatusThunk({ id: order.id, status: primaryNext }))}

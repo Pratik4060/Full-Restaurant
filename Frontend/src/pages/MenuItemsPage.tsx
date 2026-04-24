@@ -83,7 +83,7 @@ export function MenuItemsPage() {
         action={<Button onClick={() => setOpen(true)}>+ Add Item</Button>}
       />
 
-      <div className="rounded-[18px] border border-[#e6ddd0] bg-white p-4 shadow-[0_8px_22px_rgba(44,33,18,0.05)]">
+      <div className="rounded-[18px] border border-[#e6ddd0] bg-white p-8 shadow-[0_8px_22px_rgba(44,33,18,0.05)]">
         <div className="grid gap-3 md:grid-cols-[1.25fr_auto_auto_0.92fr_0.92fr] md:items-center">
           <label className="flex h-11 items-center rounded-[8px] border border-[#dcd6ce] bg-[#f5f5f5] px-3 transition focus-within:border-[#c9c0b5] focus-within:bg-white">
             <svg
@@ -170,9 +170,11 @@ export function MenuItemsPage() {
         </div>
       </div>
 
-      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+      <div className="grid justify-items-center gap-5 sm:grid-cols-2 xl:grid-cols-3">
         {filtered.map((item) => (
-          <MenuItemCard key={item.id} item={item} />
+          <div key={item.id} className="w-full max-w-[310px]">
+            <MenuItemCard item={item} />
+          </div>
         ))}
       </div>
 

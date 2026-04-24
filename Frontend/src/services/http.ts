@@ -3,6 +3,16 @@ import { tokenStorage } from "../lib/token";
 
 type Method = "GET" | "POST" | "PUT" | "PATCH" | "DELETE";
 
+export class ApiError extends Error {
+  status: number;
+
+  constructor(message: string, status: number) {
+    super(message);
+    this.name = "ApiError";
+    this.status = status;
+  }
+}
+
 export async function http<T>(
   path: string,
   options?: { method?: Method; body?: unknown; auth?: boolean }
@@ -25,7 +35,13 @@ export async function http<T>(
 
   if (!res.ok) {
     const message = (data as { message?: string }).message ?? "Request failed";
-    throw new Error(message);
+    if (res.status === 401 && auth && token) {
+      tokenStorage.clear();
+      if (typeof window !== "undefined") {
+        window.dispatchEvent(new Event("admin-auth-expired"));
+      }
+    }
+    throw new ApiError(message, res.status);
   }
 
   return data as T;

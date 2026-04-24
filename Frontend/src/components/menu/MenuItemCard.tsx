@@ -18,14 +18,14 @@ export function MenuItemCard({ item }: { item: MenuItem }) {
   }, [item.imageUrl]);
 
   return (
-    <div className="overflow-hidden rounded-[12px] border border-[#e2ddd4] bg-white shadow-[0_6px_18px_rgba(44,33,18,0.06)]">
+    <div className="flex h-full min-h-[430px] flex-col overflow-hidden rounded-[12px] border border-[#e2ddd4] bg-white shadow-[0_6px_18px_rgba(44,33,18,0.06)]">
       <img
         src={imageSrc}
         alt={item.name}
-        className="h-[134px] w-full object-cover"
+        className="h-[168px] w-full object-cover"
         onError={() => setImageSrc(fallbackImage)}
       />
-      <div className="px-3 pb-3 pt-2.5">
+      <div className="flex flex-1 flex-col px-3 pb-3 pt-2.5">
         <div className="flex items-start justify-between gap-3">
           <h3 className="text-[13px] font-semibold text-[#23201b]">{item.name}</h3>
           <Switch
@@ -43,21 +43,21 @@ export function MenuItemCard({ item }: { item: MenuItem }) {
 
         <p className="mt-2 line-clamp-2 min-h-[38px] text-[11px] leading-5 text-[#6f6961]">{item.description}</p>
 
-        <div className="mt-3 space-y-2 border-t border-[#ece6db] pt-3 text-[12px] text-[#2d2925]">
+        <div className="mt-3 space-y-2  text-[12px] text-[#2d2925]">
           <div className="flex items-center justify-between">
             <span>Price</span>
             <span className="font-medium">{priceValue}</span>
           </div>
-          <div className="flex items-center justify-between">
+          <div className="flex items-center pt-3 justify-between">
             <span>Prep Time</span>
             <span className="text-[#5f5951]">{item.prepTimeMins} mins</span>
           </div>
         </div>
 
-        <div className="mt-3 flex items-center gap-3 border-t border-[#ece6db] pt-3">
+        <div className="mt-auto flex items-center justify-between gap-5 border-t border-[#ece6db] pt-3">
           <button
             type="button"
-            className="flex h-8 flex-1 items-center justify-center rounded-[4px] border border-[#9d7b42] bg-[#9d7b42] px-3 text-[12px] font-medium text-white transition hover:bg-[#8a6835]"
+            className="flex h-9 flex-[0.8] items-center justify-center rounded-[4px] border border-[#9d7b42] bg-[#9d7b42] px-3 text-[12px] font-medium text-white transition hover:bg-[#8a6835]"
             onClick={() => void 0}
           >
             <span className="inline-flex items-center gap-2">
@@ -77,7 +77,7 @@ export function MenuItemCard({ item }: { item: MenuItem }) {
             </span>
           </button>
           <button
-            className="flex h-9 w-10 items-center justify-center rounded-[4px] border border-[#ffb6b6] text-[#ff5d5d] transition hover:bg-[#fff5f5]"
+            className="flex h-9 w-12 items-center justify-center rounded-[4px] border border-[#ff6f6f] bg-white text-[#ff5d5d] transition hover:bg-[#fff5f5]"
             onClick={() => void dispatch(deleteMenuItemThunk(item.id))}
             type="button"
             aria-label="Delete item"

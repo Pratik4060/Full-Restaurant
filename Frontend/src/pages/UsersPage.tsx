@@ -21,11 +21,11 @@ import {
 import type { UserRole, UserRow } from "../types/api";
 
 const roleTone: Record<UserRole, string> = {
-  ADMIN: "bg-[#f6d2fa] text-[#9821a6]",
-  MANAGER: "bg-[#d8f7df] text-[#1f9a41]",
-  KITCHEN: "bg-[#fff3bf] text-[#9b8400]",
-  CASHIER: "bg-[#edf9b7] text-[#6d8500]",
-  WAITER: "bg-[#d6f1ff] text-[#0b86bf]",
+  ADMIN: "bg-[#f7c5f1] text-[#9a1aa3]",
+  MANAGER: "bg-[#d6f8dd] text-[#1b9a3b]",
+  KITCHEN: "bg-[#fff4bd] text-[#9a8b00]",
+  CASHIER: "bg-[#edf8b7] text-[#6b8400]",
+  WAITER: "bg-[#d7f3ff] text-[#0d87bf]",
 };
 
 const roleOptions: UserRole[] = ["ADMIN", "MANAGER", "KITCHEN", "CASHIER", "WAITER"];
@@ -48,6 +48,42 @@ const emptyForm: UserFormState = {
 
 const formatDate = (value: string) =>
   new Intl.DateTimeFormat("en-GB", { day: "2-digit", month: "2-digit", year: "numeric" }).format(new Date(value));
+
+function SortGlyph() {
+  return (
+    <svg viewBox="0 0 20 20" className="h-4 w-4 shrink-0 text-[#222222]" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">
+      <path d="m6 7 4-4 4 4" />
+      <path d="m14 13-4 4-4-4" />
+    </svg>
+  );
+}
+
+function TableHeaderCell({
+  children,
+  checkbox,
+  className,
+}: {
+  children?: React.ReactNode;
+  checkbox?: boolean;
+  className?: string;
+}) {
+  return (
+    <th className={`border-b border-r border-[#d8dce2] bg-[#f5f6f8] px-4 py-4 text-left text-[12px] font-medium text-[#24292f] ${className ?? ""}`}>
+      <div className={`flex items-center ${checkbox ? "justify-center" : "justify-between"} gap-2`}>
+        {children ? <span>{children}</span> : null}
+        {!checkbox ? <SortGlyph /> : null}
+      </div>
+    </th>
+  );
+}
+
+function RolePill({ role }: { role: UserRole }) {
+  return (
+    <span className={`inline-flex min-w-[96px] items-center justify-center rounded-full px-4 py-2 text-[12px] font-medium ${roleTone[role]}`}>
+      {role.charAt(0) + role.slice(1).toLowerCase()}
+    </span>
+  );
+}
 
 export function UsersPage() {
   const dispatch = useAppDispatch();
@@ -139,6 +175,7 @@ export function UsersPage() {
     for (const id of visibleSelectedIds) {
       await dispatch(deleteUserThunk(id));
     }
+    setSelectedIds([]);
     await refreshUsers();
   };
 
@@ -154,10 +191,10 @@ export function UsersPage() {
   );
 
   const showingLabel = useMemo(() => {
-    if (pagination.total === 0) return "Showing 0 users";
+    if (pagination.total === 0) return "Showing 0 Out of 0";
     const start = (pagination.page - 1) * pagination.limit + 1;
     const end = Math.min(start + rows.length - 1, pagination.total);
-    return `Showing ${start}-${end} of ${pagination.total} users`;
+    return `Showing ${start}-${end} Out of ${pagination.total}`;
   }, [pagination.limit, pagination.page, pagination.total, rows.length]);
 
   return (
@@ -174,99 +211,140 @@ export function UsersPage() {
         ))}
       </section>
 
-      <section className="rounded-[28px] border border-[#e9e0d4] bg-white p-5 shadow-[0_18px_50px_rgba(52,39,21,0.06)]">
-        <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-          <Input
-            value={search}
-            onChange={(event) => dispatch(setUsersSearch(event.target.value))}
-            placeholder="Search by name or email"
-            className="w-full md:max-w-[380px] bg-white"
-          />
-          <Button
-            variant="danger"
+      <section className="rounded-[16px] bg-white px-6 py-6 shadow-[0_1px_0_rgba(0,0,0,0.02)]">
+        <div className="mb-6 flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+          <label className="flex h-11 w-full max-w-[540px] items-center rounded-[8px] border border-[#d0d0d0] bg-white px-4 text-[#7d766d]">
+            <svg viewBox="0 0 24 24" className="h-4 w-4 shrink-0 text-[#7d766d]" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+              <circle cx="11" cy="11" r="7" />
+              <path d="m20 20-3.5-3.5" />
+            </svg>
+            <Input
+              value={search}
+              onChange={(event) => dispatch(setUsersSearch(event.target.value))}
+              placeholder="Search by name ,phone"
+              className="h-full border-0 bg-transparent px-4 text-[14px] placeholder:text-[#8f8a82] focus:bg-transparent"
+            />
+          </label>
+
+          <button
+            type="button"
             disabled={visibleSelectedIds.length === 0 || mutating}
             onClick={() => void handleDeleteSelected()}
+            className="inline-flex h-11 min-w-[172px] items-center justify-center gap-3 rounded-[6px] border border-[#ff4f4f] bg-white px-5 text-[15px] font-medium text-[#ff3f3f] transition hover:bg-[#fff5f5] disabled:cursor-not-allowed disabled:opacity-50"
           >
+            <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M3 6h18" />
+              <path d="M8 6V4h8v2" />
+              <path d="M19 6l-1 13H6L5 6" />
+              <path d="M10 11v5" />
+              <path d="M14 11v5" />
+            </svg>
             Delete
-          </Button>
+          </button>
         </div>
 
-        <div className="mt-5 overflow-hidden rounded-[20px] border border-[#e7dfd4]">
+        <div className="overflow-hidden rounded-[8px] border border-[#d8dce2]">
           <div className="overflow-x-auto">
-            <table className="min-w-full border-collapse text-left">
-              <thead className="bg-[#fbfaf8] text-[12px] font-semibold text-[#5d584f]">
+            <table className="min-w-[1120px] table-fixed border-collapse text-left">
+              <thead>
                 <tr>
-                  <th className="w-12 border-b border-[#e7dfd4] px-4 py-4">
+                  <TableHeaderCell checkbox className="w-[48px] px-2">
                     <input
                       type="checkbox"
                       checked={rows.length > 0 && rows.every((row) => visibleSelectedIds.includes(row.id))}
                       onChange={() =>
-                        setSelectedIds(
-                          rows.every((row) => selectedIds.includes(row.id)) ? [] : rows.map((row) => row.id)
-                        )
+                        setSelectedIds(rows.every((row) => selectedIds.includes(row.id)) ? [] : rows.map((row) => row.id))
                       }
+                      className="h-5 w-5 rounded-[4px] border-[#8e9bb0] text-[#2f4b6a]"
                     />
-                  </th>
-                  <th className="border-b border-[#e7dfd4] px-4 py-4">User</th>
-                  <th className="border-b border-[#e7dfd4] px-4 py-4">Email</th>
-                  <th className="border-b border-[#e7dfd4] px-4 py-4">Role</th>
-                  <th className="border-b border-[#e7dfd4] px-4 py-4">Created</th>
-                  <th className="border-b border-[#e7dfd4] px-4 py-4">Status</th>
-                  <th className="border-b border-[#e7dfd4] px-4 py-4 text-right">Action</th>
+                  </TableHeaderCell>
+                  <TableHeaderCell className="w-[255px]">User</TableHeaderCell>
+                  <TableHeaderCell className="w-[250px]">Email</TableHeaderCell>
+                  <TableHeaderCell className="w-[210px]">Role</TableHeaderCell>
+                  <TableHeaderCell className="w-[170px]">Created</TableHeaderCell>
+                  <TableHeaderCell className="w-[120px]">Status</TableHeaderCell>
+                  <TableHeaderCell className="w-[115px] text-center">Action</TableHeaderCell>
                 </tr>
               </thead>
               <tbody className="bg-white text-[13px] text-[#2b2b2b]">
-                {rows.map((row) => (
-                  <tr key={row.id} className="transition hover:bg-[#fcfaf6]">
-                    <td className="border-b border-[#eee6da] px-4 py-4">
-                      <input
-                        type="checkbox"
-                        checked={visibleSelectedIds.includes(row.id)}
-                        onChange={() =>
-                          setSelectedIds((current) =>
-                            current.includes(row.id)
-                              ? current.filter((item) => item !== row.id)
-                              : [...current, row.id]
-                          )
-                        }
-                      />
-                    </td>
-                    <td className="border-b border-[#eee6da] px-4 py-4 font-medium">{row.user}</td>
-                    <td className="border-b border-[#eee6da] px-4 py-4">{row.email}</td>
-                    <td className="border-b border-[#eee6da] px-4 py-4">
-                      <span className={`inline-flex rounded-full px-4 py-2 text-[12px] font-semibold ${roleTone[row.role]}`}>
-                        {row.role.charAt(0) + row.role.slice(1).toLowerCase()}
-                      </span>
-                    </td>
-                    <td className="border-b border-[#eee6da] px-4 py-4">{formatDate(row.created)}</td>
-                    <td className="border-b border-[#eee6da] px-4 py-4">
-                      <Switch
-                        checked={row.status}
-                        onChange={(checked) => void dispatch(updateUserStatusThunk({ id: row.id, isActive: checked }))}
-                      />
-                    </td>
-                    <td className="border-b border-[#eee6da] px-4 py-4">
-                      <div className="flex justify-end gap-2">
-                        <Button variant="secondary" className="h-9 px-3" onClick={() => openEdit(row)}>
-                          Edit
-                        </Button>
-                        <Button
-                          variant="danger"
-                          className="h-9 px-3"
-                          onClick={async () => {
-                            await dispatch(deleteUserThunk(row.id));
-                            await refreshUsers();
-                          }}
+                {rows.map((row, index) => {
+                  const rowNumber = (pagination.page - 1) * pagination.limit + index + 1;
+
+                  return (
+                    <tr key={row.id} className="h-[58px] transition hover:bg-[#fcfcfd]">
+                      <td className="border-b border-r border-[#d8dce2] px-3 py-3 text-center">
+                        <input
+                          type="checkbox"
+                          checked={visibleSelectedIds.includes(row.id)}
+                          onChange={() =>
+                            setSelectedIds((current) =>
+                              current.includes(row.id) ? current.filter((item) => item !== row.id) : [...current, row.id]
+                            )
+                          }
+                          className="h-5 w-5 rounded-[4px] border-[#8e9bb0] text-[#2f4b6a]"
+                        />
+                      </td>
+                      <td className="border-b border-r border-[#d8dce2] px-4 py-3">
+                        <button
+                          type="button"
+                          onClick={() => openEdit(row)}
+                          className="text-left leading-5 transition hover:opacity-80"
                         >
-                          Delete
-                        </Button>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
+                          <p className="text-[14px] font-medium text-[#262626]">{row.user}</p>
+                          <p className="text-[12px] text-[#8d8880]">ID: {rowNumber}</p>
+                        </button>
+                      </td>
+                      <td className="border-b border-r border-[#d8dce2] px-4 py-3 text-[#2f2f2f]">{row.email}</td>
+                      <td className="border-b border-r border-[#d8dce2] px-4 py-3">
+                        <RolePill role={row.role} />
+                      </td>
+                      <td className="border-b border-r border-[#d8dce2] px-4 py-3 text-[#2f2f2f]">{formatDate(row.created)}</td>
+                      <td className="border-b border-r border-[#d8dce2] px-4 py-3">
+                        <div className="flex items-center justify-start">
+                          <Switch
+                            checked={row.status}
+                            onChange={(checked) => void dispatch(updateUserStatusThunk({ id: row.id, isActive: checked }))}
+                          />
+                        </div>
+                      </td>
+                      <td className="border-b border-[#d8dce2] px-4 py-3">
+                        <div className="flex items-center justify-center gap-3">
+                          <button
+                            type="button"
+                            onClick={() => openEdit(row)}
+                            className="inline-flex h-8 w-8 items-center justify-center rounded-[6px] bg-[#efefef] text-[#383838] transition hover:bg-[#e6e6e6]"
+                            aria-label="Edit user"
+                          >
+                            <svg viewBox="0 0 24 24" className="h-4.5 w-4.5" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                              <path d="M12 20h9" />
+                              <path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z" />
+                            </svg>
+                          </button>
+                          <button
+                            type="button"
+                            onClick={async () => {
+                              await dispatch(deleteUserThunk(row.id));
+                              await refreshUsers();
+                            }}
+                            className="inline-flex h-8 w-8 items-center justify-center rounded-[6px] bg-[#efefef] text-[#ff5a5a] transition hover:bg-[#f8efef]"
+                            aria-label="Delete user"
+                          >
+                            <svg viewBox="0 0 24 24" className="h-4.5 w-4.5" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                              <path d="M3 6h18" />
+                              <path d="M8 6V4h8v2" />
+                              <path d="M19 6l-1 13H6L5 6" />
+                              <path d="M10 11v5" />
+                              <path d="M14 11v5" />
+                            </svg>
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })}
                 {rows.length === 0 ? (
                   <tr>
-                    <td colSpan={7} className="px-4 py-10 text-center text-[13px] text-[#857f76]">
+                    <td colSpan={7} className="px-4 py-12 text-center text-[13px] text-[#857f76]">
                       No users found.
                     </td>
                   </tr>
@@ -286,11 +364,7 @@ export function UsersPage() {
         </div>
       </section>
 
-      <Modal
-        open={modalOpen}
-        onClose={() => setModalOpen(false)}
-        title={editingUser ? "Edit User" : "Add User"}
-      >
+      <Modal open={modalOpen} onClose={() => setModalOpen(false)} title={editingUser ? "Edit User" : "Add User"}>
         <div className="grid gap-4 md:grid-cols-2">
           <div className="space-y-2">
             <label className="text-[12px] font-medium text-[#5f5a53]">Name</label>
@@ -312,10 +386,7 @@ export function UsersPage() {
           </div>
           <div className="space-y-2">
             <label className="text-[12px] font-medium text-[#5f5a53]">Role</label>
-            <Select
-              value={form.role}
-              onChange={(event) => setForm({ ...form, role: event.target.value as UserRole })}
-            >
+            <Select value={form.role} onChange={(event) => setForm({ ...form, role: event.target.value as UserRole })}>
               {roleOptions.map((role) => (
                 <option key={role} value={role}>
                   {role}
