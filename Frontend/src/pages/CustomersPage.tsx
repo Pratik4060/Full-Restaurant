@@ -161,7 +161,7 @@ export function CustomersPage() {
             <Input
               value={search}
               onChange={(event) => dispatch(setCustomersSearch(event.target.value))}
-              placeholder="Search by name , phone"
+              placeholder="Search by name, phone"
               className="h-full border-0 bg-transparent px-0 text-[13px] placeholder:text-[#8f8981] focus:border-0 focus:bg-transparent"
             />
           </label>
