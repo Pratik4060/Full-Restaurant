@@ -437,15 +437,6 @@ export function BillingPage() {
           <div className="space-y-2">
             <h2 className="text-[18px] font-medium text-[#111111]">Pending Payments ({pendingRows.length})</h2>
           </div>
-          <button
-            type="button"
-            disabled={visiblePendingIds.length === 0 || mutating}
-            onClick={() => void deleteSelectedPending()}
-            className="inline-flex h-11 min-w-[176px] items-center justify-center gap-3 rounded-[6px] border border-[#ff4f4f] bg-white px-5 text-[15px] font-medium text-[#ff3f3f] transition hover:bg-[#fff5f5] disabled:cursor-not-allowed disabled:opacity-50"
-          >
-            <TrashIcon />
-            Delete
-          </button>
         </div>
 
         <div className="mb-6 flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
@@ -458,6 +449,16 @@ export function BillingPage() {
               className="h-full border-0 bg-transparent px-4 text-[14px] placeholder:text-[#8f8a82] focus:bg-transparent"
             />
           </label>
+                    <button
+            type="button"
+            disabled={visiblePendingIds.length === 0 || mutating}
+            onClick={() => void deleteSelectedPending()}
+            className="inline-flex h-11 min-w-[176px] items-center justify-center gap-3 rounded-[6px] border border-[#ff4f4f] bg-white px-5 text-[15px] font-medium text-[#ff3f3f] transition hover:bg-[#fff5f5] disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            <TrashIcon />
+            Delete
+          </button>
+
         </div>
 
         <div className="overflow-hidden rounded-[8px] border border-[#d8dce2]">
