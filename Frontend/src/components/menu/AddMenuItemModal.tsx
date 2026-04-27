@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState, type ChangeEvent, type FormEvent } from "react";
 import { useAppDispatch } from "../../app/hooks";
-import { createMenuItemThunk } from "../../features/menu/menuSlice";
-import type { DietType, MealType } from "../../types/api";
+import { createMenuItemThunk, updateMenuItemThunk } from "../../features/menu/menuSlice";
+import type { DietType, MealType, MenuItem } from "../../types/api";
 import { Button } from "../ui/Button";
 import { Input } from "../ui/Input";
 import { Modal } from "../ui/Modal";
@@ -32,6 +32,20 @@ const createEmptyForm = () => ({
   isAvailable: true,
 });
 
+const createFormFromItem = (item: MenuItem) => ({
+  name: item.name,
+  description: item.description,
+  imageUrl: item.imageUrl ?? "",
+  price: item.price,
+  prepTimeMins: item.prepTimeMins,
+  type: item.type,
+  category: item.category,
+  subCategory: item.subCategory ?? "",
+  diet: item.diet,
+  isBestseller: item.isBestseller,
+  isAvailable: item.isAvailable,
+});
+
 const readFileAsDataUrl = (file: File) =>
   new Promise<string>((resolve, reject) => {
     const reader = new FileReader();
@@ -40,28 +54,47 @@ const readFileAsDataUrl = (file: File) =>
     reader.readAsDataURL(file);
   });
 
-export function AddMenuItemModal({ open, onClose }: { open: boolean; onClose: () => void }) {
+export function AddMenuItemModal({
+  open,
+  onClose,
+  initialItem,
+}: {
+  open: boolean;
+  onClose: () => void;
+  initialItem?: MenuItem | null;
+}) {
   const dispatch = useAppDispatch();
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const [form, setForm] = useState(createEmptyForm);
+  const isEditing = Boolean(initialItem);
 
   useEffect(() => {
     if (!open) return;
-    setForm(createEmptyForm());
+    setForm(initialItem ? createFormFromItem(initialItem) : createEmptyForm());
     if (fileInputRef.current) {
       fileInputRef.current.value = "";
     }
-  }, [open]);
+  }, [initialItem, open]);
 
   const submit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    await dispatch(
-      createMenuItemThunk({
-        ...form,
-        imageUrl: form.imageUrl || undefined,
-        subCategory: form.subCategory || undefined,
-      })
-    );
+    const payload = {
+      ...form,
+      imageUrl: form.imageUrl || undefined,
+      subCategory: form.subCategory || undefined,
+    };
+
+    if (initialItem) {
+      await dispatch(
+        updateMenuItemThunk({
+          id: initialItem.id,
+          data: payload,
+        })
+      );
+    } else {
+      await dispatch(createMenuItemThunk(payload));
+    }
+
     onClose();
   };
 
@@ -102,7 +135,7 @@ export function AddMenuItemModal({ open, onClose }: { open: boolean; onClose: ()
   const categoryOptions = mealCategoryOptions[form.type];
 
   return (
-    <Modal open={open} onClose={onClose} title="Add Menu Item">
+    <Modal open={open} onClose={onClose} title={isEditing ? "Edit Menu Item" : "Add Menu Item"}>
       <form onSubmit={submit} className="w-full max-w-[calc(100vw-56px)]">
         <div className="space-y-4">
           <div>
@@ -267,7 +300,7 @@ export function AddMenuItemModal({ open, onClose }: { open: boolean; onClose: ()
               type="submit"
               className="h-10 rounded-[6px] border-[#9a742f] bg-[#9a742f] text-[13px] font-medium text-white hover:border-[#866426] hover:bg-[#866426]"
             >
-              Create
+              {isEditing ? "Save" : "Create"}
             </Button>
           </div>
         </div>

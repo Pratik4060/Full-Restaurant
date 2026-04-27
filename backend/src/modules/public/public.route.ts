@@ -1,5 +1,6 @@
 import { Router } from "express";
 import {
+  getPublicEvents,
   postPublicCustomer,
   getPublicMenu,
   getPublicOffers,
@@ -11,6 +12,7 @@ import {
 
 const router = Router();
 
+router.get("/events", getPublicEvents);
 router.get("/menu-items", getPublicMenu);
 router.get("/offers", getPublicOffers);
 router.post("/customers", postPublicCustomer);

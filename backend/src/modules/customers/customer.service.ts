@@ -2,6 +2,7 @@ import { OrderStatus } from "@prisma/client";
 import { Prisma } from "@prisma/client";
 import { prisma } from "../../config/prisma.js";
 import { type RevenuePeriod, getPeriodStartDate } from "../../utils/date.js";
+import { broadcastInvalidation } from "../../realtime/events.js";
 
 const numberValue = (value: unknown) => Number(value ?? 0);
 
@@ -190,6 +191,7 @@ export const deleteCustomerById = async (customerId: string) => {
     },
   });
 
+  broadcastInvalidation(["customers", "dashboard"]);
   return { deleted: true };
 };
 
@@ -202,6 +204,7 @@ export const bulkDeleteCustomers = async (customerIds: string[]) => {
     },
   });
 
+  broadcastInvalidation(["customers", "dashboard"]);
   return {
     deletedCount: result.count,
   };

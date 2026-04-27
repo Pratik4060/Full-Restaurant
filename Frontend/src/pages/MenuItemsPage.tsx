@@ -13,6 +13,7 @@ import {
   setMealTypeFilter,
   setMenuSearch,
 } from "../features/menu/menuSlice";
+import type { MenuItem } from "../types/api";
 
 const frontendBreakfastCategories = ["Bestseller", "Beverages", "Health", "Quick Bites"];
 const frontendLunchDinnerCategories = [
@@ -32,6 +33,7 @@ export function MenuItemsPage() {
   const dispatch = useAppDispatch();
   const { list, search, dietFilter, mealTypeFilter, categoryFilter } = useAppSelector((s) => s.menu);
   const [open, setOpen] = useState(false);
+  const [editingItem, setEditingItem] = useState<MenuItem | null>(null);
 
   useEffect(() => {
     void dispatch(fetchMenuItemsThunk(undefined));
@@ -80,7 +82,16 @@ export function MenuItemsPage() {
       <PageHeader
         title="Menu Items"
         subtitle="Manage your restaurant menu"
-        action={<Button onClick={() => setOpen(true)}>+ Add Item</Button>}
+        action={
+          <Button
+            onClick={() => {
+              setEditingItem(null);
+              setOpen(true);
+            }}
+          >
+            + Add Item
+          </Button>
+        }
       />
 
       <div className="rounded-[18px] border border-[#e6ddd0] bg-white p-8 shadow-[0_8px_22px_rgba(44,33,18,0.05)]">
@@ -173,12 +184,25 @@ export function MenuItemsPage() {
       <div className="grid justify-items-center gap-5 sm:grid-cols-2 xl:grid-cols-3">
         {filtered.map((item) => (
           <div key={item.id} className="w-full max-w-[310px]">
-            <MenuItemCard item={item} />
+            <MenuItemCard
+              item={item}
+              onEdit={(selectedItem) => {
+                setEditingItem(selectedItem);
+                setOpen(false);
+              }}
+            />
           </div>
         ))}
       </div>
 
-      <AddMenuItemModal open={open} onClose={() => setOpen(false)} />
+      <AddMenuItemModal
+        open={open || Boolean(editingItem)}
+        initialItem={editingItem}
+        onClose={() => {
+          setOpen(false);
+          setEditingItem(null);
+        }}
+      />
     </div>
   );
 }

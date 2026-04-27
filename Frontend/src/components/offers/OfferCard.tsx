@@ -11,6 +11,13 @@ const formatDate = (value: string | null) => {
   return new Date(value).toLocaleDateString("en-IN");
 };
 
+const formatOfferValue = (value: string) => {
+  const trimmed = value.trim();
+  if (!trimmed) return trimmed;
+  if (/off$/i.test(trimmed)) return trimmed;
+  return `${trimmed} Off`;
+};
+
 export function OfferCard({
   offer,
   onEdit,
@@ -19,21 +26,21 @@ export function OfferCard({
   onEdit: (offer: Offer) => void;
 }) {
   const dispatch = useAppDispatch();
-  const statusLabel = offer.isActive ? "Scheduled" : "Inactive";
+  const statusLabel = offer.isActive ? "Valid Now" : "Inactive";
 
   return (
-    <div className="overflow-hidden rounded-[12px] border border-[#e2ddd4] bg-white shadow-[0_6px_18px_rgba(44,33,18,0.06)]">
+    <div className="overflow-hidden rounded-[12px] w-[300px] border border-[#ddd5c8] bg-white shadow-[0_6px_16px_rgba(44,33,18,0.05)]">
       <img
         src={offer.imageUrl ?? fallbackImage}
         alt={offer.title}
-        className="h-[178px] w-full object-cover"
+        className="h-[200px] w-full object-cover"
         onError={(event) => {
           event.currentTarget.src = fallbackImage;
         }}
       />
-      <div className="px-3 pb-3 pt-2.5">
+      <div className="px-3 pb-3 pt-3">
         <div className="flex items-start justify-between gap-3">
-          <h3 className="text-[13px] font-semibold text-[#23201b]">{offer.title}</h3>
+          <h3 className="line-clamp-2 text-[13px] font-semibold leading-5 text-[#23201b]">{offer.title}</h3>
           <Switch
             checked={offer.isActive}
             onChange={() => void dispatch(toggleOfferThunk({ id: offer.id, isActive: !offer.isActive }))}
@@ -41,15 +48,24 @@ export function OfferCard({
         </div>
 
         <div className="mt-2 flex flex-wrap gap-2">
-          <span className={`rounded-[5px] px-2.5 py-1 text-[10px] font-medium ${offer.isActive ? "bg-[#cfcfcf] text-[#3f3f3f]" : "bg-[#f4d8ad] text-[#5e4522]"}`}>
+          <span
+            className={`rounded-[6px] px-2 py-1 text-[10px] font-medium ${
+              offer.isActive ? "bg-[#e8f8ea] text-[#3ca64f]" : "bg-[#f0f0f0] text-[#666666]"
+            }`}
+          >
             {statusLabel}
           </span>
-          <span className="rounded-[5px] bg-[#f4d8ad] px-2.5 py-1 text-[10px] font-medium text-[#5e4522]">
-            {offer.discountText}
+          <span className="rounded-[6px] bg-[#f4d8ad] px-2 py-1 text-[10px] font-medium text-[#8b642c]">
+            {formatOfferValue(offer.discountText)}
           </span>
         </div>
 
-        <p className="mt-2 line-clamp-2 min-h-[38px] text-[11px] leading-5 text-[#6f6961]">{offer.description}</p>
+        <p className="mt-3 min-h-[44px] text-[11px] leading-5 text-[#5f5a53]">{offer.description}</p>
+
+        <div className="mt-2 flex items-center gap-1 text-[11px] text-[#3b3835]">
+          <span>Valid till:</span>
+          <span className="font-semibold">{formatDate(offer.validUntil)}</span>
+        </div>
 
         <div className="mt-3 border-t border-[#ece6db] pt-3 text-[12px] text-[#2d2925]">
           <div className="flex items-center gap-1 text-[#8b857c]">
@@ -57,17 +73,19 @@ export function OfferCard({
               <rect x="3" y="4" width="18" height="17" rx="2" />
               <path d="M8 2v4M16 2v4M3 10h18" />
             </svg>
-            <span>{formatDate(offer.createdAt)} - {formatDate(offer.validUntil)}</span>
+            <span>
+              {formatDate(offer.createdAt)} - {formatDate(offer.validUntil)}
+            </span>
           </div>
         </div>
 
-        <div className="mt-3 flex items-center gap-3 border-t border-[#ece6db] pt-3">
+        <div className="mt-3 flex items-center gap-3 border-t border-[#ece6db] pt-3  ">
           <button
             type="button"
             onClick={() => onEdit(offer)}
-            className="flex h-8 flex-1 items-center justify-center rounded-[4px] border border-[#9d7b42] bg-[#9d7b42] px-3 text-[12px] font-medium text-white transition hover:bg-[#8a6835]"
+            className="flex h-8 flex-1 items-center justify-center rounded-[4px] border border-[#9d7b42] bg-[#9d7b42]  text-[12px] font-medium text-white transition hover:bg-[#8a6835]"
           >
-            <span className="inline-flex items-center gap-2">
+            <span className="inline-flex items-center gap-2 ">
               <svg
                 viewBox="0 0 24 24"
                 className="h-4 w-4"
@@ -86,7 +104,7 @@ export function OfferCard({
           <button
             type="button"
             onClick={() => void dispatch(deleteOfferThunk(offer.id))}
-            className="flex h-9 w-10 items-center justify-center rounded-[4px] border border-[#ffb6b6] text-[#ff5d5d] transition hover:bg-[#fff5f5]"
+            className="flex h-8 w-8 items-center justify-center rounded-[4px] border border-[#ffb6b6] text-[#ff5d5d] transition hover:bg-[#fff5f5]"
             aria-label="Delete offer"
           >
             <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">

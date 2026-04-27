@@ -16,6 +16,7 @@ import {
   payPublicOrder,
   registerPublicCustomer,
 } from "./public.service.js";
+import { streamRealtimeEvents } from "../../realtime/events.js";
 
 export const getPublicMenu = async (req: Request, res: Response, next: NextFunction) => {
   try {
@@ -31,6 +32,10 @@ export const getPublicMenu = async (req: Request, res: Response, next: NextFunct
   } catch (error) {
     next(error as Error);
   }
+};
+
+export const getPublicEvents = (req: Request, res: Response) => {
+  streamRealtimeEvents(req, res);
 };
 
 export const getPublicOffers = async (_req: Request, res: Response, next: NextFunction) => {

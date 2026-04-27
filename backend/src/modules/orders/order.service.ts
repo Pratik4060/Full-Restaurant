@@ -1,6 +1,7 @@
 import { OrderStatus } from "@prisma/client";
 import { prisma } from "../../config/prisma.js";
 import type { CreateOrderInput } from "./order.schema.js";
+import { broadcastInvalidation } from "../../realtime/events.js";
 
 const numberValue = (value: unknown) => Number(value ?? 0);
 const serializeOrder = <T extends { totalAmount: unknown; items?: Array<{ unitPrice: unknown; totalPrice: unknown }> }>(order: T) => ({
@@ -119,6 +120,7 @@ export const createOrder = async (payload: CreateOrderInput) => {
       },
     },
   });
+  broadcastInvalidation(["orders", "customers", "billing", "dashboard"]);
   return serializeOrder(order);
 };
 
@@ -127,5 +129,6 @@ export const updateOrderStatus = async (orderId: string, status: OrderStatus) =>
     where: { id: orderId },
     data: { status },
   });
+  broadcastInvalidation(["orders", "billing", "dashboard"]);
   return serializeOrder(order);
 };

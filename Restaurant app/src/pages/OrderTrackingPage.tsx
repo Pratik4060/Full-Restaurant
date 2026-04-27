@@ -1,9 +1,10 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { motion } from "framer-motion";
 import { Bell, CheckCircle, ChefHat, ChevronLeft } from "lucide-react";
 import BottomNav from "../components/BottomNav";
 import { useOrder } from "../contexts/OrderContext";
 import { restaurantApi, type PublicOrder } from "../services/restaurantApi";
+import { useRealtimeInvalidate } from "../hooks/useRealtimeInvalidate";
 
 interface TrackOrderPageProps {
   onBack: () => void;
@@ -22,15 +23,29 @@ const TrackOrderPage: React.FC<TrackOrderPageProps> = ({
   estimatedTime = "15-20",
   onReadyComplete,
 }) => {
-  const { updateOrderStatus } = useOrder();
+  const { updateOrderStatus, hasReadyOrderNotification } = useOrder();
   const [orderData, setOrderData] = useState<PublicOrder | null>(null);
+  const loadOrder = useCallback(async () => {
+    if (!orderNumber) return;
+
+    try {
+      const data = await restaurantApi.getOrder(orderNumber);
+      setOrderData(data);
+    } catch {
+      setOrderData(null);
+    }
+  }, [orderNumber]);
+
+  useRealtimeInvalidate(["orders", "billing"], () => {
+    void loadOrder();
+  });
 
   useEffect(() => {
     if (!orderNumber) return;
 
     let cancelled = false;
 
-    const loadOrder = async () => {
+    const loadOrderWithGuard = async () => {
       try {
         const data = await restaurantApi.getOrder(orderNumber);
         if (!cancelled) {
@@ -43,8 +58,8 @@ const TrackOrderPage: React.FC<TrackOrderPageProps> = ({
       }
     };
 
-    void loadOrder();
-    const interval = setInterval(() => void loadOrder(), 4000);
+    void loadOrderWithGuard();
+    const interval = setInterval(() => void loadOrderWithGuard(), 4000);
 
     return () => {
       cancelled = true;
@@ -104,8 +119,11 @@ const TrackOrderPage: React.FC<TrackOrderPageProps> = ({
         <button onClick={onBack} className="p-1">
           <ChevronLeft size={28} className="text-gray-700" />
         </button>
-        <button className="p-2">
+        <button className="relative p-2">
           <Bell size={24} className="text-gray-700" />
+          {hasReadyOrderNotification ? (
+            <span className="absolute right-1 top-1 h-2.5 w-2.5 rounded-full bg-[#ff4d4f] ring-2 ring-white" />
+          ) : null}
         </button>
       </div>
 

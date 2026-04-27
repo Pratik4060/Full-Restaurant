@@ -103,73 +103,36 @@ function ArrowRight() {
   );
 }
 
-function RevenueIcon() {
-  return (
-    <svg viewBox="0 0 24 24" className="h-6 w-6" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M5 6h14" />
-      <path d="M6 10h10a3 3 0 0 1 0 6H8" />
-      <path d="M9 14h6" />
-      <path d="M9 3v18" />
-    </svg>
-  );
-}
-
-function BillsIcon() {
-  return (
-    <svg viewBox="0 0 24 24" className="h-6 w-6" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M7 4h10v16H7z" />
-      <path d="M9.5 8h5" />
-      <path d="M9.5 12h5" />
-      <path d="M9.5 16h3.2" />
-    </svg>
-  );
-}
-
-function PaidIcon() {
-  return (
-    <svg viewBox="0 0 24 24" className="h-6 w-6" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round">
-      <circle cx="12" cy="12" r="8.5" />
-      <path d="m8.5 12.5 2.2 2.2L15.8 9.8" />
-    </svg>
-  );
-}
-
-function PaymentsIcon() {
-  return (
-    <svg viewBox="0 0 24 24" className="h-6 w-6" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round">
-      <rect x="4" y="7" width="16" height="10" rx="2" />
-      <path d="M4 11h16" />
-      <path d="M8 15h4" />
-    </svg>
-  );
-}
-
 function MetricCard({
   title,
   value,
   tone,
-  icon,
+  iconSrc,
 }: {
   title: string;
   value: string;
   tone: Tone;
-  icon: ReactNode;
+  iconSrc: string;
 }) {
   const toneClasses: Record<Tone, string> = {
-    green: "text-[#16a34a] bg-[#ecf8ed]",
-    orange: "text-[#ff8a2a] bg-[#fff1e3]",
-    emerald: "text-[#22c55e] bg-[#e9f9ec]",
-    violet: "text-[#8b5cf6] bg-[#f1eafe]",
+    green: "bg-[linear-gradient(135deg,#ffffff_0%,#f7fcf8_100%)]",
+    orange: "bg-[linear-gradient(135deg,#ffffff_0%,#fff8f0_100%)]",
+    emerald: "bg-[linear-gradient(135deg,#ffffff_0%,#f4fcf6_100%)]",
+    violet: "bg-[linear-gradient(135deg,#ffffff_0%,#faf7ff_100%)]",
   };
 
   return (
-    <div className="rounded-[10px] border border-[#d8d1c7] bg-white px-4 py-4 shadow-[0_3px_12px_rgba(33,24,13,0.08)]">
-      <div className="flex items-start justify-between gap-3">
+    <div
+      className={`relative flex h-[132px] w-[220px] overflow-hidden rounded-[12px] border border-[#e6ddd0] px-4 py-5 shadow-[0_8px_22px_rgba(44,33,18,0.05)] ${toneClasses[tone]}`}
+    >
+      <div className="flex w-full items-start justify-between gap-4">
         <div>
-          <p className="text-[12px] text-[#252525]">{title}</p>
-          <p className="mt-2 text-[14px] font-semibold text-[#1d1d1d]">{value}</p>
+          <p className="text-[13px] font-medium text-[#6b655e]">{title}</p>
+          <p className="mt-4 text-[24px] font-semibold leading-none text-[#1d1d1d]">{value}</p>
         </div>
-        <div className={`flex h-10 w-10 items-center justify-center rounded-full ${toneClasses[tone]}`}>{icon}</div>
+        <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-[10px] bg-white/90 shadow-[0_6px_16px_rgba(44,33,18,0.08)]">
+          <img src={iconSrc} alt="" aria-hidden="true" className="h-8 w-8 object-contain" />
+        </div>
       </div>
     </div>
   );
@@ -447,11 +410,31 @@ export function BillingPage() {
         </div>
       ) : null}
 
-      <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        <MetricCard title="Today's Revenue" value={formatCurrency(summary?.todaysRevenue ?? 0)} tone="green" icon={<RevenueIcon />} />
-        <MetricCard title="Unpaid Bills" value={`${summary?.unpaidBills ?? 0}`} tone="orange" icon={<BillsIcon />} />
-        <MetricCard title="Paid Today" value={`${summary?.paidToday ?? 0}`} tone="emerald" icon={<PaidIcon />} />
-        <MetricCard title="Total Payments" value={`${summary?.totalPayments ?? 0}`} tone="violet" icon={<PaymentsIcon />} />
+      <section className="grid justify-items-center gap-4 sm:grid-cols-2 xl:grid-cols-4">
+        <MetricCard
+          title="Today's Revenue"
+          value={formatCurrency(summary?.todaysRevenue ?? 0)}
+          tone="green"
+          iconSrc="/assets/billingPyments/todaysrevenue.svg"
+        />
+        <MetricCard
+          title="Unpaid Bills"
+          value={`${summary?.unpaidBills ?? 0}`}
+          tone="orange"
+          iconSrc="/assets/billingPyments/unpaidbills.svg"
+        />
+        <MetricCard
+          title="Paid Today"
+          value={`${summary?.paidToday ?? 0}`}
+          tone="emerald"
+          iconSrc="/assets/billingPyments/paidtoday.svg"
+        />
+        <MetricCard
+          title="Total Payments"
+          value={`${summary?.totalPayments ?? 0}`}
+          tone="violet"
+          iconSrc="/assets/billingPyments/totalpayments.svg"
+        />
       </section>
 
       <section className="rounded-[16px] bg-white px-6 py-6 shadow-[0_1px_0_rgba(0,0,0,0.02)]">
@@ -662,29 +645,29 @@ export function BillingPage() {
 
       <Modal open={Boolean(paymentTarget)} onClose={() => setPaymentTarget(null)} title="Process Payment">
         {paymentTarget ? (
-          <div className="space-y-6">
-            <div className="rounded-2xl border border-[#e8e0d5] bg-[#fcfbf8]">
-              <div className="grid grid-cols-2 gap-x-6 gap-y-4 px-4 py-5 text-[14px]">
+          <div className="space-y-5">
+            <div className="rounded-[8px] border border-[#e6e1d8] bg-[#fbfbfa]">
+              <div className="grid grid-cols-2 gap-x-6 gap-y-4 px-4 py-4 text-[12px]">
                 <span className="text-[#8a847d]">Order #</span>
-                <span className="text-right font-medium">{paymentTarget.order}</span>
+                <span className="text-right font-medium text-[#55514c]">{paymentTarget.order}</span>
                 <span className="text-[#8a847d]">Customer</span>
-                <span className="text-right font-medium">{paymentTarget.customer}</span>
+                <span className="text-right font-medium text-[#55514c]">{paymentTarget.customer}</span>
                 <span className="text-[#8a847d]">Total Amount</span>
-                <span className="text-right text-[20px] font-semibold text-[#18a34a]">{formatCurrency(paymentTarget.amount)}</span>
+                <span className="text-right text-[18px] font-semibold text-[#18a34a]">{formatCurrency(paymentTarget.amount)}</span>
               </div>
             </div>
 
             <div>
-              <p className="mb-3 text-[14px] font-medium text-[#1f1f1f]">Payment Method</p>
+              <p className="mb-3 text-[12px] font-medium text-[#4b4741]">Payment Method</p>
               <div className="grid gap-3 sm:grid-cols-2">
                 {(Object.keys(methodLabel) as PaymentMethod[]).map((method) => (
                   <button
                     key={method}
                     type="button"
                     onClick={() => setPaymentMethod(method)}
-                    className={`rounded-xl border px-4 py-4 text-[15px] font-semibold transition ${
+                    className={`h-10 rounded-[4px] border px-4 text-[12px] font-semibold transition ${
                       paymentMethod === method
-                        ? "border-brand-300 bg-brand-100 text-brand-700"
+                        ? "border-[#efcc94] bg-[#efcc94] text-[#2d261b]"
                         : "border-[#ddd6ca] bg-white text-[#2d2a26] hover:bg-[#fbf8f1]"
                     }`}
                   >
@@ -694,12 +677,17 @@ export function BillingPage() {
               </div>
             </div>
 
-            <div className="flex flex-col-reverse gap-3 sm:flex-row sm:justify-between">
-              <Button variant="danger" className="h-11 px-8" onClick={() => setPaymentTarget(null)}>
+            <div className="flex flex-col-reverse gap-3 border-t border-[#e8e1d7] pt-4 sm:flex-row sm:justify-between">
+              <Button
+                variant="danger"
+                className="h-10 min-w-[104px] rounded-[4px] border-[#ff6f6f] bg-white px-8 text-[12px] font-medium text-[#ff4f4f] hover:bg-[#fff5f5]"
+                onClick={() => setPaymentTarget(null)}
+              >
                 Cancel
               </Button>
               <Button
-                className="h-11 bg-[#1daf2c] hover:border-[#179322] hover:bg-[#179322]"
+                variant="secondary"
+                className="h-10 min-w-[138px] rounded-[4px] border-[#16a34a] bg-[#16a34a] px-8 text-[12px] font-medium text-white hover:border-[#15803d] hover:bg-[#15803d]"
                 disabled={mutating}
                 onClick={() => void handleConfirmPayment()}
               >

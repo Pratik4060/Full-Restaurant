@@ -1,6 +1,7 @@
 import { DietType, MealType  } from "@prisma/client";
 import { prisma } from "../../config/prisma.js";
 import type { CreateMenuItemInput, UpdateMenuItemInput } from "./menu-item.schema.js";
+import { broadcastInvalidation } from "../../realtime/events.js";
 
 type MenuItemFilters = {
   diet?: DietType;
@@ -47,6 +48,7 @@ export const createMenuItem = async (payload: CreateMenuItemInput) => {
       ...(payload.isAvailable !== undefined ? { isAvailable: payload.isAvailable } : {}),
     },
   });
+  broadcastInvalidation(["menu-items", "dashboard"]);
   return serializeMenuItem(item);
 };
 
@@ -69,11 +71,15 @@ export const updateMenuItem = async (menuItemId: string, payload: UpdateMenuItem
     where: { id: menuItemId },
     data,
   });
+  broadcastInvalidation(["menu-items", "dashboard"]);
   return serializeMenuItem(item);
 };
 
 
-export const deleteMenuItem = async (menuItemId: string) =>
-  prisma.menuItem.delete({
+export const deleteMenuItem = async (menuItemId: string) => {
+  const deleted = await prisma.menuItem.delete({
     where: { id: menuItemId },
   });
+  broadcastInvalidation(["menu-items", "dashboard"]);
+  return deleted;
+};

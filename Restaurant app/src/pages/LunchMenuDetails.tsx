@@ -34,7 +34,7 @@ const LunchMenuDetails: React.FC<Props> = ({
   tableNumber,
   initialFocus = "default",
 }) => {
-  const { orderPlaced, orderNumber, placeOrder } = useOrder();
+  const { orderPlaced, orderNumber, placeOrder, hasReadyOrderNotification } = useOrder();
   const { menuItems } = useRestaurantCatalog();
   const publicItems = mapPublicLunchItems(menuItems, category);
 
@@ -227,8 +227,11 @@ const resolvedActiveTab =
         <button onClick={onBack} className="text-2xl font-medium">
           <img src={back} alt="back" />
         </button>
-        <button>
+        <button className="relative">
           <img src={bell} className="invert h-8" alt="notifications" />
+          {hasReadyOrderNotification ? (
+            <span className="absolute right-0 top-0 h-2.5 w-2.5 rounded-full bg-[#ff4d4f] ring-2 ring-white" />
+          ) : null}
         </button>
       </div>
 

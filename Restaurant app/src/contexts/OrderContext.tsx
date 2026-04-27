@@ -41,6 +41,7 @@ interface OrderContextType {
   orderPlaced: boolean;
   orderNumber: string;
   orderHistory: OrderHistoryRecord[];
+  hasReadyOrderNotification: boolean;
   addToOrder: (item: OrderItem) => void;
   updateQuantity: (id: string | number, quantity: number) => void;
   removeItem: (id: string | number) => void;
@@ -60,6 +61,7 @@ const ORDER_HISTORY_KEY = "restaurant-order-history";
 const CURRENT_ORDER_KEY = "restaurant-current-order-number";
 const ORDER_PLACED_KEY = "restaurant-order-placed";
 const USER_DATA_KEY = "restaurant-user-data";
+const READY_NOTIFICATION_KEY = "restaurant-ready-order-notification";
 
 const normalizeHistory = (records: OrderHistoryRecord[]): OrderHistoryRecord[] => {
   const latestByOrder = new Map<string, OrderHistoryRecord>();
@@ -119,6 +121,10 @@ export const OrderProvider: React.FC<{ children: ReactNode }> = ({ children }) =
     return window.localStorage.getItem(CURRENT_ORDER_KEY) ?? "";
   });
   const [orderHistory, setOrderHistory] = useState<OrderHistoryRecord[]>(loadHistory);
+  const [hasReadyOrderNotification, setHasReadyOrderNotification] = useState(() => {
+    if (typeof window === "undefined") return false;
+    return window.localStorage.getItem(READY_NOTIFICATION_KEY) === "true";
+  });
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -134,7 +140,8 @@ export const OrderProvider: React.FC<{ children: ReactNode }> = ({ children }) =
 
     window.localStorage.setItem(CURRENT_ORDER_KEY, orderNumber);
     window.localStorage.setItem(ORDER_PLACED_KEY, String(orderPlaced));
-  }, [orderNumber, orderPlaced]);
+    window.localStorage.setItem(READY_NOTIFICATION_KEY, String(hasReadyOrderNotification));
+  }, [hasReadyOrderNotification, orderNumber, orderPlaced]);
 
   const addToOrder = (item: OrderItem) => {
     setOrderItems((prev) => {
@@ -163,7 +170,10 @@ export const OrderProvider: React.FC<{ children: ReactNode }> = ({ children }) =
     setOrderItems((prev) => prev.filter((item) => item.id !== id));
   };
 
-  const clearOrder = () => setOrderItems([]);
+  const clearOrder = () => {
+    setOrderItems([]);
+    setHasReadyOrderNotification(false);
+  };
 
   const placeOrder = async (meta?: { tableNumber?: string }) => {
     if (orderPlaced && orderNumber) {
@@ -216,6 +226,7 @@ export const OrderProvider: React.FC<{ children: ReactNode }> = ({ children }) =
 
     setOrderNumber(response.orderNumber);
     setOrderPlaced(true);
+    setHasReadyOrderNotification(false);
     setOrderHistory((prev) =>
       normalizeHistory([
         {
@@ -239,12 +250,18 @@ export const OrderProvider: React.FC<{ children: ReactNode }> = ({ children }) =
   const resetPlacedOrder = () => {
     setOrderPlaced(false);
     setOrderNumber("");
+    setHasReadyOrderNotification(false);
   };
 
   const updateOrderStatus = (targetOrderNumber: string, status: OrderStatus) => {
     if (!targetOrderNumber) return;
 
     const now = new Date().toISOString();
+    if (status === "ready") {
+      setHasReadyOrderNotification(true);
+    } else if (status === "paid") {
+      setHasReadyOrderNotification(false);
+    }
 
     setOrderHistory((prev) =>
       normalizeHistory(
@@ -264,6 +281,7 @@ export const OrderProvider: React.FC<{ children: ReactNode }> = ({ children }) =
     const { subtotal, gst, totalAmount } = getOrderTotals(snapshot);
     const now = new Date().toISOString();
     let recordFound = false;
+    setHasReadyOrderNotification(false);
 
     setOrderHistory((prev) =>
       normalizeHistory(
@@ -323,6 +341,7 @@ export const OrderProvider: React.FC<{ children: ReactNode }> = ({ children }) =
         orderPlaced,
         orderNumber,
         orderHistory,
+        hasReadyOrderNotification,
         addToOrder,
         updateQuantity,
         removeItem,

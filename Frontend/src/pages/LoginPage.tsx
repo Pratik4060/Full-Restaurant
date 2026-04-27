@@ -23,25 +23,59 @@ export function LoginPage() {
   };
 
   return (
-    <div className="grid min-h-screen grid-cols-1 bg-[#f5f3ef] md:grid-cols-[1.05fr_1fr]">
-      <div className="relative hidden md:block">
-        <div className="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=1400')] bg-cover bg-center" />
-        <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(30,20,12,0.18),rgba(30,20,12,0.28))]" />
+    <div className="grid min-h-screen grid-cols-1 bg-[#f5f3ef] md:grid-cols-[0.95fr_1.05fr]">
+      <div className="relative hidden overflow-hidden bg-[#2d241d] md:flex md:items-center md:justify-center">
+        <img
+          src="/assets/loginPage.svg"
+          alt="Restaurant interior"
+          className="h-full w-full object-contain"
+        />
       </div>
 
-      <div className="grid place-items-center p-6 md:p-10">
-        <form onSubmit={submit} className="w-full max-w-md space-y-4 rounded-2xl border border-[#e6ddd0] bg-white p-8 shadow-[0_18px_44px_rgba(44,33,18,0.10)]">
-          <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-xl bg-brand-600 text-sm font-semibold text-white">
-            RMS
-          </div>
+      <div className="grid place-items-center bg-[#f8f8f8] p-6 md:p-10">
+        <form
+          onSubmit={submit}
+          className="w-full max-w-[380px] space-y-5 rounded-[4px] border border-[#ece7de] bg-white px-7 py-7 shadow-[0_12px_32px_rgba(44,33,18,0.14)]"
+        >
           <div className="text-center">
-            <p className="text-sm text-[#5f584f]">Restaurant Management System</p>
-            <h1 className="mt-3 text-2xl font-semibold text-[#1f1f1f]">Admin Panel</h1>
+            <img
+              src="/assets/logo.svg"
+              alt="Restaurant logo"
+              className="mx-auto h-[78px] w-[78px] rounded-[6px] object-cover"
+            />
+            <p className="mt-5 text-[13px] text-[#2b241d]">Restaurant Management System</p>
+            <h1 className="mt-5 text-[18px] font-semibold text-[#1f1f1f]">Admin Panel</h1>
           </div>
-          <Input placeholder="Email" value={email} onChange={(e) => setEmail(e.target.value)} />
-          <Input type="password" placeholder="Password" value={password} onChange={(e) => setPassword(e.target.value)} />
+
+          <div className="space-y-4">
+            <div>
+              <label className="mb-1.5 block text-[12px] text-[#514a42]">Email Address</label>
+              <Input
+                placeholder="admin@zhonix.com"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                className="h-9 rounded-[3px] border-[#d9d4cb] bg-white px-3 text-[12px] placeholder:text-[#aaa39a]"
+              />
+            </div>
+
+            <div>
+              <label className="mb-1.5 block text-[12px] text-[#514a42]">Password</label>
+              <Input
+                type="password"
+                placeholder="admin123"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                className="h-9 rounded-[3px] border-[#d9d4cb] bg-white px-3 text-[12px] placeholder:text-[#aaa39a]"
+              />
+            </div>
+          </div>
+
           {error && <p className="text-sm text-[#d45d5d]">{error}</p>}
-          <Button type="submit" className="w-full" disabled={loading}>
+          <Button
+            type="submit"
+            className="mt-2 h-10 w-full rounded-[3px] border-[#9d7b42] bg-[#9d7b42] text-[12px] font-medium text-white hover:border-[#876733] hover:bg-[#876733]"
+            disabled={loading}
+          >
             {loading ? "Signing In..." : "Sign In"}
           </Button>
         </form>

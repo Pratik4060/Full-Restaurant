@@ -1,5 +1,5 @@
 import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
-import { menuApi, type CreateMenuItemPayload } from "../../services/menuApi";
+import { menuApi, type CreateMenuItemPayload, type UpdateMenuItemPayload } from "../../services/menuApi";
 import type { DietType, MealType, MenuItem } from "../../types/api";
 
 interface MenuState {
@@ -55,6 +55,17 @@ export const toggleMenuAvailabilityThunk = createAsyncThunk(
   }
 );
 
+export const updateMenuItemThunk = createAsyncThunk(
+  "menu/update",
+  async (payload: { id: string; data: UpdateMenuItemPayload }, { rejectWithValue }) => {
+    try {
+      return await menuApi.update(payload.id, payload.data);
+    } catch (error) {
+      return rejectWithValue((error as Error).message);
+    }
+  }
+);
+
 export const deleteMenuItemThunk = createAsyncThunk(
   "menu/delete",
   async (id: string, { rejectWithValue }) => {
@@ -102,6 +113,10 @@ const menuSlice = createSlice({
         state.list.unshift(action.payload);
       })
       .addCase(toggleMenuAvailabilityThunk.fulfilled, (state, action) => {
+        const idx = state.list.findIndex((x) => x.id === action.payload.id);
+        if (idx >= 0) state.list[idx] = { ...state.list[idx], ...action.payload };
+      })
+      .addCase(updateMenuItemThunk.fulfilled, (state, action) => {
         const idx = state.list.findIndex((x) => x.id === action.payload.id);
         if (idx >= 0) state.list[idx] = { ...state.list[idx], ...action.payload };
       })

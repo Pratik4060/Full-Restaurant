@@ -9,6 +9,7 @@ import billingRoutes from "../modules/billing/billing.route.js";
 import userRoutes from "../modules/users/user.route.js";
 import publicRoutes from "../modules/public/public.route.js";
 import { authMiddleware } from "../middlewares/auth.middleware.js";
+import { streamRealtimeEvents } from "../realtime/events.js";
 
 const router = Router();
 
@@ -16,6 +17,7 @@ router.get("/health", (_req, res) => {
   res.json({ status: "ok" });
 });
 
+router.get("/events", streamRealtimeEvents);
 router.use("/auth", authRoutes);
 router.use("/public", publicRoutes);
 

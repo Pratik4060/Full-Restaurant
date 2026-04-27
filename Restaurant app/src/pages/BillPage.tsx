@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import { ChevronLeft } from "lucide-react";
 import BottomNav from "../components/BottomNav";
 import { useOrder } from "../contexts/OrderContext";
@@ -13,6 +13,7 @@ import PaymentSuccessPage from "./PaymentSuccessPage";
 import scan from "../assets/scan.svg";
 import counter from "../assets/counter.svg";
 import { restaurantApi, type PublicOrder } from "../services/restaurantApi";
+import { useRealtimeInvalidate } from "../hooks/useRealtimeInvalidate";
 
 interface BillPageProps {
   onBack: () => void;
@@ -31,17 +32,32 @@ const BillPage: React.FC<BillPageProps> = ({
   tableNumber,
   orderNumber = "1234",
 }) => {
-  const { clearOrder, resetPlacedOrder, markOrderPaid } = useOrder();
+  const { clearOrder, resetPlacedOrder, markOrderPaid, hasReadyOrderNotification } = useOrder();
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>(null);
   const [paid, setPaid] = useState(false);
   const [orderData, setOrderData] = useState<PublicOrder | null>(null);
+  const loadOrder = useCallback(async () => {
+    if (!orderNumber) return;
+
+    try {
+      const data = await restaurantApi.getOrder(orderNumber);
+      setOrderData(data);
+      setPaid(Boolean(data.payment));
+    } catch {
+      setOrderData(null);
+    }
+  }, [orderNumber]);
+
+  useRealtimeInvalidate(["orders", "billing"], () => {
+    void loadOrder();
+  });
 
   useEffect(() => {
     if (!orderNumber) return;
 
     let cancelled = false;
 
-    const loadOrder = async () => {
+    const loadOrderWithGuard = async () => {
       try {
         const data = await restaurantApi.getOrder(orderNumber);
         if (!cancelled) {
@@ -55,8 +71,8 @@ const BillPage: React.FC<BillPageProps> = ({
       }
     };
 
-    void loadOrder();
-    const interval = setInterval(() => void loadOrder(), 4000);
+    void loadOrderWithGuard();
+    const interval = setInterval(() => void loadOrderWithGuard(), 4000);
 
     return () => {
       cancelled = true;
@@ -133,8 +149,11 @@ const BillPage: React.FC<BillPageProps> = ({
           Payment
         </h1>
 
-        <button className="p-2 hover:bg-gray-100 rounded-full transition-colors">
+        <button className="relative p-2 hover:bg-gray-100 rounded-full transition-colors">
           <img src={bell} alt="bell" className="h-7 w-7 md:h-8 md:w-8 invert" />
+          {hasReadyOrderNotification ? (
+            <span className="absolute right-1 top-1 h-2.5 w-2.5 rounded-full bg-[#ff4d4f] ring-2 ring-white" />
+          ) : null}
         </button>
       </div>
 

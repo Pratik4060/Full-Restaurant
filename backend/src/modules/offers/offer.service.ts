@@ -1,4 +1,5 @@
 import { prisma } from "../../config/prisma.js";
+import { broadcastInvalidation } from "../../realtime/events.js";
 
 type OfferCreatePayload = {
   title: string;
@@ -25,8 +26,8 @@ export const listOffers = async () =>
     },
   });
 
-export const createOffer = async (payload: OfferCreatePayload) =>
-  prisma.offer.create({
+export const createOffer = async (payload: OfferCreatePayload) => {
+  const offer = await prisma.offer.create({
     data: {
       title: payload.title,
       description: payload.description,
@@ -38,6 +39,9 @@ export const createOffer = async (payload: OfferCreatePayload) =>
         : {}),
     },
   });
+  broadcastInvalidation(["offers", "dashboard"]);
+  return offer;
+};
 
 export const updateOffer = async (offerId: string, payload: OfferUpdatePayload) => {
   const data: Record<string, unknown> = {};
@@ -51,13 +55,18 @@ export const updateOffer = async (offerId: string, payload: OfferUpdatePayload) 
     data.validUntil = payload.validUntil ? new Date(payload.validUntil) : null;
   }
 
-  return prisma.offer.update({
+  const offer = await prisma.offer.update({
     where: { id: offerId },
     data,
   });
+  broadcastInvalidation(["offers", "dashboard"]);
+  return offer;
 };
 
-export const deleteOffer = async (offerId: string) =>
-  prisma.offer.delete({
+export const deleteOffer = async (offerId: string) => {
+  const deleted = await prisma.offer.delete({
     where: { id: offerId },
   });
+  broadcastInvalidation(["offers", "dashboard"]);
+  return deleted;
+};

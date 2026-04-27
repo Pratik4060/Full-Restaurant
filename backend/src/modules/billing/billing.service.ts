@@ -1,6 +1,7 @@
 import { OrderStatus, PaymentStatus, type PaymentMethod } from "@prisma/client";
 import { prisma } from "../../config/prisma.js";
 import { type RevenuePeriod, getPeriodStartDate } from "../../utils/date.js";
+import { broadcastInvalidation } from "../../realtime/events.js";
 
 const numberValue = (value: unknown) => Number(value ?? 0);
 const withGst = (subtotal: number) => Number((subtotal + Number((subtotal * 0.05).toFixed(2))).toFixed(2));
@@ -321,6 +322,7 @@ export const processOrderPayment = async (payload: { orderId: string; method: Pa
     },
   });
 
+  broadcastInvalidation(["orders", "billing", "customers", "dashboard"]);
   return {
     id: payment.id,
     paymentId: payment.paymentId,
@@ -339,6 +341,7 @@ export const deletePendingOrder = async (orderId: string) => {
     },
   });
 
+  broadcastInvalidation(["orders", "billing", "customers", "dashboard"]);
   return { deleted: true };
 };
 
@@ -349,5 +352,6 @@ export const deletePaymentById = async (paymentId: string) => {
     },
   });
 
+  broadcastInvalidation(["billing", "dashboard"]);
   return { deleted: true };
 };

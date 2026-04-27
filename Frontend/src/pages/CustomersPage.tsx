@@ -108,13 +108,13 @@ export function CustomersPage() {
   }, [pagination.limit, pagination.page, pagination.total, rows.length]);
 
   return (
-    <div className="space-y-5">
+    <div className="min-w-0 space-y-5 overflow-x-hidden">
       <PageHeader title="Customers" subtitle="Manage customer information" />
 
-      <div className="flex justify-end">
-        <div className="relative w-[92px]">
+      <div className="flex justify-start sm:justify-end">
+        <div className="relative w-full max-w-[132px]">
           <Select
-            className="h-8 appearance-none rounded-[6px] border-[#d6cec0] bg-white px-3 pr-8 text-[12px] shadow-[0_1px_2px_rgba(0,0,0,0.04)]"
+            className="h-10 appearance-none rounded-[6px] border-[#d6cec0] bg-white px-3 pr-9 text-[12px] shadow-[0_1px_2px_rgba(0,0,0,0.04)] sm:h-8"
             value={period}
             onChange={(event) => dispatch(setCustomersPeriod(event.target.value as typeof period))}
           >
@@ -136,16 +136,16 @@ export function CustomersPage() {
         </div>
       </div>
 
-      <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+      <section className="grid min-w-0 grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <MetricCard title="Total Customers" value={`${summary?.totalCustomers ?? 0}`} note=" " />
         <MetricCard title="Total Orders" value={`${summary?.totalOrders ?? 0}`} note=" " />
         <MetricCard title="Total Revenue" value={formatCurrency(summary?.totalRevenue ?? 0)} note=" " />
         <MetricCard title="Avg. Order Value" value={formatCurrency(summary?.averageOrderValue ?? 0)} note=" " />
       </section>
 
-      <section className="rounded-[12px] border border-[#e7e0d7] bg-white px-4 py-4 shadow-[0_8px_24px_rgba(44,33,18,0.04)]">
+      <section className="rounded-[12px] border border-[#e7e0d7] bg-white px-3 py-3 shadow-[0_8px_24px_rgba(44,33,18,0.04)] sm:px-4 sm:py-4">
         <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-          <label className="flex h-11 w-full max-w-[560px] items-center rounded-[6px] border border-[#d5d1ca] bg-white px-3">
+          <label className="flex h-11 w-full items-center rounded-[6px] border border-[#d5d1ca] bg-white px-3 md:max-w-[560px]">
             <svg
               viewBox="0 0 24 24"
               className="mr-2 h-4 w-4 shrink-0 text-[#7a746b]"
@@ -170,7 +170,7 @@ export function CustomersPage() {
             type="button"
             disabled={selectedCount === 0 || deleting}
             onClick={() => void handleDeleteSelected()}
-            className="inline-flex h-11 items-center justify-center gap-2 rounded-[6px] border border-[#ff5858] px-5 text-[13px] font-medium text-[#ff4d4d] transition hover:bg-[#fff5f5] disabled:cursor-not-allowed disabled:opacity-50"
+            className="inline-flex h-11 w-full items-center justify-center gap-2 rounded-[6px] border border-[#ff5858] px-5 text-[13px] font-medium text-[#ff4d4d] transition hover:bg-[#fff5f5] disabled:cursor-not-allowed disabled:opacity-50 md:w-auto"
           >
             <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
               <path d="M3 6h18" />
@@ -183,8 +183,8 @@ export function CustomersPage() {
           </button>
         </div>
 
-        <div className="mt-4 overflow-hidden rounded-[6px] border border-[#d6dce3]">
-          <div className="overflow-x-auto">
+        <div className="mt-4 max-w-full overflow-hidden rounded-[6px] border border-[#d6dce3]">
+          <div className="max-w-full overflow-x-auto">
             <table className="min-w-[980px] border-collapse text-left">
               <thead className="bg-[#f7f8fb] text-[12px] font-medium text-[#2a2a2a]">
                 <tr>
@@ -300,7 +300,13 @@ export function CustomersPage() {
 
         <div className="mt-4 flex flex-col gap-3 text-[12px] text-[#7e786f] md:flex-row md:items-center md:justify-between">
           <span>{showingLabel}</span>
-          <Pagination page={pagination.page} totalPages={pagination.totalPages} onChange={(page) => dispatch(setCustomersPage(page))} />
+          <div className="overflow-x-auto">
+            <Pagination
+              page={pagination.page}
+              totalPages={pagination.totalPages}
+              onChange={(page) => dispatch(setCustomersPage(page))}
+            />
+          </div>
         </div>
       </section>
     </div>

@@ -26,7 +26,7 @@ interface Props {
 }
 
 const BreakfastDetails: React.FC<Props> = ({ category, userName, onBack, foodType, tableNumber, initialFocus = "default" }) => {
-  const { orderPlaced, orderNumber, placeOrder } = useOrder();
+  const { orderPlaced, orderNumber, placeOrder, hasReadyOrderNotification } = useOrder();
   const { menuItems } = useRestaurantCatalog();
   const publicItems = mapPublicBreakfastItems(menuItems);
   const [activeTab, setActiveTab] = useState<BreakfastTab>(() => {
@@ -181,8 +181,11 @@ const BreakfastDetails: React.FC<Props> = ({ category, userName, onBack, foodTyp
           <img src={back} alt="back" />
         </button>
         <div className="flex gap-3">
-          <button>
+          <button className="relative">
             <img src={bell} className="invert h-8" alt="bell" />
+            {hasReadyOrderNotification ? (
+              <span className="absolute right-0 top-0 h-2.5 w-2.5 rounded-full bg-[#ff4d4f] ring-2 ring-white" />
+            ) : null}
           </button>
         </div>
       </div>

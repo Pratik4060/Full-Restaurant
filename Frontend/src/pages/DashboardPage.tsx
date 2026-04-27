@@ -113,6 +113,15 @@ function RevenueChart({ points, period }: { points: RevenuePoint[]; period: Reve
           .map((point, index) => `${index === 0 ? "M" : "L"} ${point.x} ${point.y}`)
           .join(" ")
       : "";
+  const tooltipWidth = 128;
+  const tooltipHeight = 52;
+  const tooltipX = hoveredPoint
+    ? Math.min(Math.max(hoveredPoint.x - tooltipWidth / 2, padding.left), width - padding.right - tooltipWidth)
+    : 0;
+  const tooltipY = hoveredPoint ? Math.max(padding.top, hoveredPoint.y - tooltipHeight - 16) : 0;
+  const tooltipPointerX = hoveredPoint
+    ? Math.min(Math.max(hoveredPoint.x, tooltipX + 12), tooltipX + tooltipWidth - 12)
+    : 0;
 
   if (points.length === 0) {
     return (
@@ -169,20 +178,32 @@ function RevenueChart({ points, period }: { points: RevenuePoint[]; period: Reve
             </text>
           </g>
         ))}
-      </svg>
 
-      {hoveredPoint ? (
-        <div
-          className="absolute z-10 rounded-[3px] border border-[#ece6dc] bg-white px-4 py-3 shadow-[0_10px_26px_rgba(0,0,0,0.08)]"
-          style={{
-            left: `${Math.min(Math.max(hoveredPoint.x - 48, 88), 340)}px`,
-            top: `${Math.max(18, hoveredPoint.y - 66)}px`,
-          }}
-        >
-          <p className="text-[12px] font-medium text-[#1f1f1f]">{hoveredPoint.label}</p>
-          <p className="mt-2 text-[12px] text-[#1f1f1f]">Revenue : ₹{currency.format(hoveredPoint.revenue)}</p>
-        </div>
-      ) : null}
+        {hoveredPoint ? (
+          <g pointerEvents="none">
+            <rect
+              x={tooltipX}
+              y={tooltipY}
+              width={tooltipWidth}
+              height={tooltipHeight}
+              rx="6"
+              fill="#ffffff"
+              stroke="#ece6dc"
+            />
+            <path
+              d={`M ${tooltipPointerX - 7} ${tooltipY + tooltipHeight} L ${tooltipPointerX} ${tooltipY + tooltipHeight + 9} L ${tooltipPointerX + 7} ${tooltipY + tooltipHeight} Z`}
+              fill="#ffffff"
+              stroke="#ece6dc"
+            />
+            <text x={tooltipX + 12} y={tooltipY + 19} className="fill-[#1f1f1f] text-[12px] font-medium">
+              {hoveredPoint.label}
+            </text>
+            <text x={tooltipX + 12} y={tooltipY + 37} className="fill-[#1f1f1f] text-[12px]">
+              Revenue : Rs. {currency.format(hoveredPoint.revenue)}
+            </text>
+          </g>
+        ) : null}
+      </svg>
 
       <div className="mt-1 flex justify-center text-[11px] text-[#7f7971]">
         <span className="inline-flex items-center gap-2">
@@ -591,3 +612,4 @@ export function DashboardPage() {
     </div>
   );
 }
+

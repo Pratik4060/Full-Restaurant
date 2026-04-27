@@ -1,5 +1,6 @@
 import { DietType, MealType, OrderStatus, PaymentMethod, PaymentStatus, Prisma } from "@prisma/client";
 import { prisma } from "../../config/prisma.js";
+import { broadcastInvalidation } from "../../realtime/events.js";
 
 const numberValue = (value: unknown) => Number(value ?? 0);
 
@@ -272,11 +273,14 @@ export const listPublicOffers = async () =>
 export const registerPublicCustomer = async (payload: {
   customerName: string;
   customerPhone?: string | undefined;
-}) =>
-  ensureCustomer({
+}) => {
+  const customer = await ensureCustomer({
     customerName: payload.customerName,
     ...(payload.customerPhone !== undefined ? { customerPhone: payload.customerPhone } : {}),
   });
+  broadcastInvalidation(["customers", "dashboard"]);
+  return customer;
+};
 
 export const likePublicMenuItem = async (payload: PublicMenuItemInput) => {
   const item = await ensureMenuItem(payload);
@@ -289,6 +293,7 @@ export const likePublicMenuItem = async (payload: PublicMenuItemInput) => {
     },
   });
 
+  broadcastInvalidation(["menu-items", "dashboard"]);
   return serializeMenuItem(updated);
 };
 
@@ -347,6 +352,7 @@ export const createPublicOrder = async (payload: {
     },
   });
 
+  broadcastInvalidation(["orders", "customers", "billing", "dashboard"]);
   return serializePublicOrder(order);
 };
 
@@ -435,5 +441,6 @@ export const payPublicOrder = async (orderNumber: string, method: PaymentMethod)
     },
   });
 
+  broadcastInvalidation(["orders", "billing", "customers", "dashboard"]);
   return serializePublicOrder(updatedOrder);
 };

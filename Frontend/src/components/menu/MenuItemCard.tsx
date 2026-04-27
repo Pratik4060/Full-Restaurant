@@ -7,7 +7,7 @@ import { Switch } from "../ui/Switch";
 const fallbackImage =
   "https://images.unsplash.com/photo-1547592180-85f173990554?w=1200&auto=format&fit=crop&q=80";
 
-export function MenuItemCard({ item }: { item: MenuItem }) {
+export function MenuItemCard({ item, onEdit }: { item: MenuItem; onEdit: (item: MenuItem) => void }) {
   const dispatch = useAppDispatch();
   const mealTypeLabel = item.type === "BREAKFAST" ? "Breakfast" : item.type === "LUNCH" ? "Lunch" : "Dinner";
   const priceValue = `₹${new Intl.NumberFormat("en-IN", { maximumFractionDigits: 0 }).format(item.price)}`;
@@ -58,7 +58,7 @@ export function MenuItemCard({ item }: { item: MenuItem }) {
           <button
             type="button"
             className="flex h-9 flex-[0.8] items-center justify-center rounded-[4px] border border-[#9d7b42] bg-[#9d7b42] px-3 text-[12px] font-medium text-white transition hover:bg-[#8a6835]"
-            onClick={() => void 0}
+            onClick={() => onEdit(item)}
           >
             <span className="inline-flex items-center gap-2">
               <svg
