@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useAppDispatch } from "../../app/hooks";
-import { deleteMenuItemThunk, toggleMenuAvailabilityThunk } from "../../features/menu/menuSlice";
+import { deleteMenuItemThunk, fetchMenuItemsThunk, toggleMenuAvailabilityThunk } from "../../features/menu/menuSlice";
 import type { MenuItem } from "../../types/api";
 import { Switch } from "../ui/Switch";
 
@@ -16,6 +16,11 @@ export function MenuItemCard({ item, onEdit }: { item: MenuItem; onEdit: (item: 
   useEffect(() => {
     setImageSrc(item.imageUrl || fallbackImage);
   }, [item.imageUrl]);
+
+  const handleDelete = async () => {
+    await dispatch(deleteMenuItemThunk(item.id)).unwrap();
+    void dispatch(fetchMenuItemsThunk(undefined));
+  };
 
   return (
     <div className="flex h-full min-h-[430px] flex-col overflow-hidden rounded-[12px] border border-[#e2ddd4] bg-white shadow-[0_6px_18px_rgba(44,33,18,0.06)]">
@@ -78,7 +83,7 @@ export function MenuItemCard({ item, onEdit }: { item: MenuItem; onEdit: (item: 
           </button>
           <button
             className="flex h-9 w-12 items-center justify-center rounded-[4px] border border-[#ff6f6f] bg-white text-[#ff5d5d] transition hover:bg-[#fff5f5]"
-            onClick={() => void dispatch(deleteMenuItemThunk(item.id))}
+            onClick={() => void handleDelete()}
             type="button"
             aria-label="Delete item"
           >

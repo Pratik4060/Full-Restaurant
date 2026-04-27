@@ -5,7 +5,106 @@ generator client {
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
-  directUrl = env("DIRECT_URL")   
+}
+
+model Admin {
+  id           String   @id @default(cuid())
+  name         String
+  email        String   @unique
+  passwordHash String
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
+
+model Customer {
+  id        String   @id @default(cuid())
+  name      String
+  phone     String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  orders    Order[]
+}
+
+model MenuItem {
+  id           String      @id @default(cuid())
+  name         String
+  description  String
+  imageUrl     String?
+  price        Decimal     @db.Decimal(10, 2)
+  prepTimeMins Int
+  type         MealType
+  category     String
+  diet         DietType
+  isAvailable  Boolean     @default(true)
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @updatedAt
+  subCategory  String?
+  isBestseller Boolean     @default(false)
+  likeCount    Int         @default(0)
+  orderItems   OrderItem[]
+}
+
+model Order {
+  id           String      @id @default(cuid())
+  orderNumber  String      @unique
+  customerId   String?
+  customerName String
+  tableNumber  String
+  status       OrderStatus @default(PENDING)
+  totalAmount  Decimal     @db.Decimal(10, 2)
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @updatedAt
+  guestCount   Int         @default(1)
+  customer     Customer?   @relation(fields: [customerId], references: [id])
+  items        OrderItem[]
+  payments     Payment[]
+}
+
+model OrderItem {
+  id         String   @id @default(cuid())
+  orderId    String
+  menuItemId String
+  quantity   Int
+  unitPrice  Decimal  @db.Decimal(10, 2)
+  totalPrice Decimal  @db.Decimal(10, 2)
+  menuItem   MenuItem @relation(fields: [menuItemId], references: [id])
+  order      Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+}
+
+model Offer {
+  id           String    @id @default(cuid())
+  title        String
+  description  String
+  discountText String
+  imageUrl     String?
+  isActive     Boolean   @default(true)
+  validUntil   DateTime?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+}
+
+model Payment {
+  id        String        @id @default(cuid())
+  paymentId String        @unique
+  orderId   String
+  amount    Decimal       @db.Decimal(10, 2)
+  method    PaymentMethod
+  status    PaymentStatus @default(COMPLETED)
+  paidAt    DateTime      @default(now())
+  createdAt DateTime      @default(now())
+  updatedAt DateTime      @updatedAt
+  order     Order         @relation(fields: [orderId], references: [id], onDelete: Cascade)
+}
+
+model AppUser {
+  id           String   @id @default(cuid())
+  name         String
+  email        String   @unique
+  passwordHash String
+  role         UserRole
+  isActive     Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
 }
 
 enum OrderStatus {
@@ -46,107 +145,4 @@ enum DietType {
   VEG
   NON_VEG
   BEVERAGE
-}
-
-model Admin {
-  id           String   @id @default(cuid())
-  name         String
-  email        String   @unique
-  passwordHash String
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
-}
-
-model Customer {
-  id        String   @id @default(cuid())
-  name      String
-  phone     String?
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  orders    Order[]
-}
-
-model MenuItem {
-  id           String      @id @default(cuid())
-  name         String
-  description  String
-  imageUrl     String?
-  price        Decimal     @db.Decimal(10, 2)
-  prepTimeMins Int
-  type         MealType
-  category     String
-  subCategory  String?
-  diet         DietType
-  isBestseller Boolean     @default(false)
-  likeCount    Int         @default(0)
-  isAvailable  Boolean     @default(true)
-  createdAt    DateTime    @default(now())
-  updatedAt    DateTime    @updatedAt
-  orderItems   OrderItem[]
-}
-
-model Order {
-  id           String      @id @default(cuid())
-  orderNumber  String      @unique
-  customerId   String?
-  customerName String
-  tableNumber  String
-  guestCount   Int         @default(1)
-  status       OrderStatus @default(PENDING)
-  totalAmount  Decimal     @db.Decimal(10, 2)
-  createdAt    DateTime    @default(now())
-  updatedAt    DateTime    @updatedAt
-
-  customer Customer?  @relation(fields: [customerId], references: [id])
-  items    OrderItem[]
-  payments Payment[]
-}
-
-model OrderItem {
-  id        String   @id @default(cuid())
-  orderId   String
-  menuItemId String
-  quantity  Int
-  unitPrice Decimal  @db.Decimal(10, 2)
-  totalPrice Decimal @db.Decimal(10, 2)
-
-  order    Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
-  menuItem MenuItem @relation(fields: [menuItemId], references: [id])
-}
-
-model Offer {
-  id          String   @id @default(cuid())
-  title       String
-  description String
-  discountText String
-  imageUrl    String?
-  isActive    Boolean  @default(true)
-  validUntil  DateTime?
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-}
-
-model Payment {
-  id          String        @id @default(cuid())
-  paymentId   String        @unique
-  orderId     String
-  amount      Decimal       @db.Decimal(10, 2)
-  method      PaymentMethod
-  status      PaymentStatus @default(COMPLETED)
-  paidAt      DateTime      @default(now())
-  createdAt   DateTime      @default(now())
-  updatedAt   DateTime      @updatedAt
-
-  order Order @relation(fields: [orderId], references: [id], onDelete: Cascade)
-}
-
-model AppUser {
-  id           String   @id @default(cuid())
-  name         String
-  email        String   @unique
-  passwordHash String
-  role         UserRole
-  isActive     Boolean  @default(true)
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
 }

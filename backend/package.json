@@ -4,12 +4,14 @@
   "description": "Restaurant Admin Backend",
   "main": "dist/server.js",
   "type": "module",
-  "scripts": {
-    "dev": "tsx watch src/server.ts",
-    "build": "prisma generate --schema Prisma/schema.prisma && prisma migrate deploy --schema Prisma/schema.prisma && tsc",
-    "start": "node dist/server.js",
-    "seed": "tsx src/prisma/seed.ts"
-  },
+"scripts": {
+  "dev": "tsx watch src/server.ts",
+  "build": "npx prisma generate --schema Prisma/schema.prisma && tsc",
+  "start": "node dist/server.js",
+  "migrate:deploy": "npx prisma migrate deploy --schema Prisma/schema.prisma",
+  "postinstall": "npx prisma generate --schema Prisma/schema.prisma",
+  "seed": "tsx src/prisma/seed.ts"
+},
   "keywords": [],
   "author": "",
   "license": "ISC",
