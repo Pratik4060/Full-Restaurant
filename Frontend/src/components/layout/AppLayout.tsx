@@ -1,10 +1,28 @@
 import { useState } from "react";
 import { Outlet } from "react-router-dom";
+import { useAppSelector } from "../../app/hooks";
+import { LoadingOverlay } from "../ui/LoadingOverlay";
 import { Sidebar } from "./Sidebar";
 import { Topbar } from "./Topbar";
 
 export function AppLayout() {
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
+  const isBusy = useAppSelector(
+    (state) =>
+      state.auth.loading ||
+      state.dashboard.loading ||
+      state.customers.loading ||
+      state.customers.deleting ||
+      state.billing.loading ||
+      state.billing.mutating ||
+      state.users.loading ||
+      state.users.mutating ||
+      state.orders.loading ||
+      state.menu.loading ||
+      state.menu.mutating ||
+      state.offers.loading ||
+      state.offers.mutating
+  );
 
   return (
     <div className="min-h-screen bg-[#F2F2F2]">
@@ -19,6 +37,7 @@ export function AppLayout() {
           </main>
         </div>
       </div>
+      {isBusy ? <LoadingOverlay /> : null}
     </div>
   );
 }

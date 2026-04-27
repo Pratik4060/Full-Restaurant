@@ -77,8 +77,16 @@ export const updateMenuItem = async (menuItemId: string, payload: UpdateMenuItem
 
 
 export const deleteMenuItem = async (menuItemId: string) => {
-  const deleted = await prisma.menuItem.delete({
-    where: { id: menuItemId },
+  const deleted = await prisma.$transaction(async (tx) => {
+    await tx.orderItem.deleteMany({
+      where: { menuItemId },
+    });
+
+    await tx.menuItem.deleteMany({
+      where: { id: menuItemId },
+    });
+
+    return { id: menuItemId };
   });
   broadcastInvalidation(["menu-items", "dashboard"]);
   return deleted;

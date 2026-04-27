@@ -57,14 +57,6 @@ const orderStatusLabel: Record<Extract<OrderStatus, "PENDING" | "PREPARING" | "R
   CANCELED: "Canceled",
 };
 
-function SortGlyph() {
-  return (
-    <svg viewBox="0 0 20 20" className="h-4 w-4 shrink-0 text-[#222222]" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">
-      <path d="m6 7 4-4 4 4" />
-      <path d="m14 13-4 4-4-4" />
-    </svg>
-  );
-}
 
 function SearchIcon() {
   return (
@@ -176,19 +168,22 @@ function MethodPill({ method }: { method: PaymentMethod }) {
 function TableHeaderCell({
   children,
   checkbox,
+  centered,
   className,
 }: {
   children?: ReactNode;
   checkbox?: boolean;
+  centered?: boolean
   className?: string;
 }) {
   return (
     <th className={`border-b border-r border-[#d8dce2] bg-[#f5f6f8] px-4 py-4 text-left text-[12px] font-medium text-[#24292f] ${className ?? ""}`}>
-      <div className={`flex items-center ${checkbox ? "justify-center" : "justify-between"} gap-2`}>
+      {/* Change: Add "|| centered" to the condition below */}
+      <div className={`flex items-center ${checkbox || centered ? "justify-center" : "justify-between"} gap-2`}>
         {children ? <span>{children}</span> : null}
-        {!checkbox ? <SortGlyph /> : null}
       </div>
     </th>
+
   );
 }
 
@@ -459,7 +454,7 @@ export function BillingPage() {
             <Input
               value={pendingSearch}
               onChange={(event) => dispatch(setPendingSearch(event.target.value))}
-              placeholder="Search by name , phone"
+              placeholder="Search by name"
               className="h-full border-0 bg-transparent px-4 text-[14px] placeholder:text-[#8f8a82] focus:bg-transparent"
             />
           </label>
@@ -483,10 +478,10 @@ export function BillingPage() {
                   <TableHeaderCell className="w-[135px]">Table</TableHeaderCell>
                   <TableHeaderCell className="w-[150px]">Items</TableHeaderCell>
                   <TableHeaderCell className="w-[155px]">Amount</TableHeaderCell>
-                  <TableHeaderCell className="w-[150px]">Status</TableHeaderCell>
-                  <TableHeaderCell className="w-[157px] text-center">Action</TableHeaderCell>
+                  <TableHeaderCell className="w-[150px]  " centered>Status</TableHeaderCell>
+                  <TableHeaderCell className="w-[157px] "centered>Action</TableHeaderCell>
                 </tr>
-              </thead>
+              </thead >
               <tbody className="bg-white text-[13px] text-[#353535]">
                 {pendingRows.map((row) => (
                   <tr key={row.id} className="h-[60px] transition hover:bg-[#fcfcfd]">
@@ -509,7 +504,7 @@ export function BillingPage() {
                     <td className="border-b border-r border-[#d8dce2] px-4 py-3">{row.table}</td>
                     <td className="border-b border-r border-[#d8dce2] px-4 py-3">{row.items} items</td>
                     <td className="border-b border-r border-[#d8dce2] px-4 py-3 font-semibold text-[#19b91f]">{formatCurrency(row.amount)}</td>
-                    <td className="border-b border-r border-[#d8dce2] px-4 py-3">
+                    <td className="border-b border-r border-[#d8dce2] px-4 py-3 text-center">
                       <StatusPill status={row.status} />
                     </td>
                     <td className="border-b border-[#d8dce2] px-4 py-3 text-center">
@@ -588,9 +583,9 @@ export function BillingPage() {
                   <TableHeaderCell className="w-[170px]">Payment ID</TableHeaderCell>
                   <TableHeaderCell className="w-[200px]">Order</TableHeaderCell>
                   <TableHeaderCell className="w-[155px]">Amount</TableHeaderCell>
-                  <TableHeaderCell className="w-[180px]">Method</TableHeaderCell>
-                  <TableHeaderCell className="w-[260px]">Date</TableHeaderCell>
-                  <TableHeaderCell className="w-[147px]">Status</TableHeaderCell>
+                  <TableHeaderCell className="w-[180px]" centered>Method</TableHeaderCell>
+                  <TableHeaderCell className="w-[260px]"centered>Date</TableHeaderCell>
+                  <TableHeaderCell className="w-[147px] " centered>Status</TableHeaderCell>
                 </tr>
               </thead>
               <tbody className="bg-white text-[13px] text-[#353535]">
@@ -613,11 +608,11 @@ export function BillingPage() {
                     <td className="border-b border-r border-[#d8dce2] px-4 py-3 font-medium text-[#2a2f36]">{row.paymentId}</td>
                     <td className="border-b border-r border-[#d8dce2] px-4 py-3 text-[#383838]">{row.order}</td>
                     <td className="border-b border-r border-[#d8dce2] px-4 py-3 font-semibold text-[#19b91f]">{formatCurrency(row.amount)}</td>
-                    <td className="border-b border-r border-[#d8dce2] px-4 py-3">
+                    <td className="border-b border-r border-[#d8dce2] px-4 py-3 text-center">
                       <MethodPill method={row.method} />
                     </td>
-                    <td className="border-b border-r border-[#d8dce2] px-4 py-3 text-[#383838]">{formatDateTime(row.date)}</td>
-                    <td className="border-b border-[#d8dce2] px-4 py-3">
+                    <td className="border-b border-r border-[#d8dce2] px-4 py-3 text-[#383838] text-center">{formatDateTime(row.date)}</td>
+                    <td className="border-b border-[#d8dce2] px-4 py-3 text-center">
                       <StatusPill status={row.status} />
                     </td>
                   </tr>
@@ -685,14 +680,15 @@ export function BillingPage() {
               >
                 Cancel
               </Button>
-              <Button
-                variant="secondary"
-                className="h-10 min-w-[138px] rounded-[4px] border-[#16a34a] bg-[#16a34a] px-8 text-[12px] font-medium text-white hover:border-[#15803d] hover:bg-[#15803d]"
-                disabled={mutating}
-                onClick={() => void handleConfirmPayment()}
-              >
-                Confirm Payment
-              </Button>
+<Button
+  variant="secondary"
+  className="h-10 min-w-[138px] !border-[#16a34a] !bg-[#16a34a] px-8 text-[12px] font-medium text-white hover:!border-[#15803d] hover:!bg-[#15803d] cursor-pointer"
+  disabled={mutating}
+  onClick={() => void handleConfirmPayment()}
+>
+  Confirm Payment
+</Button>
+
             </div>
           </div>
         ) : null}

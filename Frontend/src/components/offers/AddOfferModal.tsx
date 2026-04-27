@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState, type ChangeEvent, type FormEvent } from "react";
-import { useAppDispatch } from "../../app/hooks";
-import { createOfferThunk, updateOfferThunk } from "../../features/offers/offersSlice";
+import { useAppDispatch, useAppSelector } from "../../app/hooks";
+import { createOfferThunk, fetchOffersThunk, updateOfferThunk } from "../../features/offers/offersSlice";
 import type { Offer } from "../../types/api";
 import { Button } from "../ui/Button";
 import { Input } from "../ui/Input";
@@ -56,8 +56,10 @@ export function AddOfferModal({
   initialOffer?: Offer | null;
 }) {
   const dispatch = useAppDispatch();
+  const submitting = useAppSelector((state) => state.offers.mutating);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const [form, setForm] = useState<OfferFormState>(createEmptyForm());
+  const [submitError, setSubmitError] = useState<string | null>(null);
 
   useEffect(() => {
     if (!open) return;
@@ -85,6 +87,7 @@ export function AddOfferModal({
 
   const submit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    setSubmitError(null);
     const discountText =
       form.discountType === "PERCENT" ? `${form.discountValue}% OFF` : `₹${form.discountValue} OFF`;
 
@@ -93,16 +96,21 @@ export function AddOfferModal({
       description: form.description,
       discountText,
       imageUrl: form.imageUrl || undefined,
-      validUntil: form.validUntil || undefined,
+      validUntil: form.validUntil ? new Date(form.validUntil).toISOString() : undefined,
       isActive: form.isActive,
     };
 
-    if (initialOffer) {
-      await dispatch(updateOfferThunk({ id: initialOffer.id, data: payload }));
-    } else {
-      await dispatch(createOfferThunk(payload));
+    try {
+      if (initialOffer) {
+        await dispatch(updateOfferThunk({ id: initialOffer.id, data: payload })).unwrap();
+      } else {
+        await dispatch(createOfferThunk(payload)).unwrap();
+      }
+      await dispatch(fetchOffersThunk()).unwrap();
+      onClose();
+    } catch (error) {
+      setSubmitError((error as Error).message || "Unable to save offer");
     }
-    onClose();
   };
 
   const handleImageChange = async (event: ChangeEvent<HTMLInputElement>) => {
@@ -158,7 +166,7 @@ export function AddOfferModal({
                 className="flex items-center gap-3 text-[13px] text-[#7f7568]"
                 onClick={() => fileInputRef.current?.click()}
               >
-                <span className="flex h-7 w-7 items-center justify-center rounded-full border border-[#b7b0a6] text-[22px] leading-none">
+                <span className="flex h-7 w-7  justify-center rounded-full border border-[#b7b0a6] text-[22px] leading-none">
                   +
                 </span>
                 add
@@ -250,11 +258,21 @@ export function AddOfferModal({
             </Button>
             <Button
               type="submit"
+              disabled={submitting}
               className="h-10 rounded-[6px] border-[#9a742f] bg-[#9a742f] text-[13px] font-medium text-white hover:border-[#866426] hover:bg-[#866426]"
             >
-              {initialOffer ? "Save" : "Create"}
+              <span className="inline-flex items-center gap-2">
+                {submitting ? (
+                  <svg className="h-4 w-4 animate-spin" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                    <circle cx="12" cy="12" r="9" stroke="currentColor" strokeOpacity="0.22" strokeWidth="3" />
+                    <path d="M21 12a9 9 0 0 0-9-9" stroke="currentColor" strokeWidth="3" strokeLinecap="round" />
+                  </svg>
+                ) : null}
+                {initialOffer ? (submitting ? "Saving..." : "Save") : submitting ? "Creating..." : "Create"}
+              </span>
             </Button>
           </div>
+          {submitError ? <p className="text-[11px] text-[#d65c5c]">{submitError}</p> : null}
         </div>
       </form>
     </Modal>

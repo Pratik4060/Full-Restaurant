@@ -4,21 +4,25 @@ import type { DietType, MealType, MenuItem } from "../../types/api";
 
 interface MenuState {
   list: MenuItem[];
+  deletedIds: string[];
   search: string;
   dietFilter: "ALL" | DietType;
   mealTypeFilter: "ALL" | MealType;
   categoryFilter: "ALL" | string;
   loading: boolean;
+  mutating: boolean;
   error: string | null;
 }
 
 const initialState: MenuState = {
   list: [],
+  deletedIds: [],
   search: "",
   dietFilter: "ALL",
   mealTypeFilter: "ALL",
   categoryFilter: "ALL",
   loading: false,
+  mutating: false,
   error: null,
 };
 
@@ -94,6 +98,15 @@ const menuSlice = createSlice({
     setCategoryFilter(state, action) {
       state.categoryFilter = action.payload as "ALL" | string;
     },
+    removeMenuItemLocal(state, action) {
+      state.list = state.list.filter((item) => item.id !== action.payload);
+      if (!state.deletedIds.includes(action.payload)) {
+        state.deletedIds.push(action.payload);
+      }
+    },
+    restoreMenuItemLocal(state, action) {
+      state.deletedIds = state.deletedIds.filter((id) => id !== action.payload);
+    },
   },
   extraReducers(builder) {
     builder
@@ -103,29 +116,65 @@ const menuSlice = createSlice({
       })
       .addCase(fetchMenuItemsThunk.fulfilled, (state, action) => {
         state.loading = false;
-        state.list = action.payload;
+        state.list = action.payload.filter((item) => !state.deletedIds.includes(item.id));
       })
       .addCase(fetchMenuItemsThunk.rejected, (state, action) => {
         state.loading = false;
         state.error = (action.payload as string) ?? "Failed to fetch menu items";
       })
+      .addCase(createMenuItemThunk.pending, (state) => {
+        state.mutating = true;
+        state.error = null;
+      })
       .addCase(createMenuItemThunk.fulfilled, (state, action) => {
+        state.mutating = false;
         state.list.unshift(action.payload);
       })
+      .addCase(createMenuItemThunk.rejected, (state, action) => {
+        state.mutating = false;
+        state.error = (action.payload as string) ?? "Failed to create menu item";
+      })
+      .addCase(toggleMenuAvailabilityThunk.pending, (state) => {
+        state.mutating = true;
+        state.error = null;
+      })
       .addCase(toggleMenuAvailabilityThunk.fulfilled, (state, action) => {
+        state.mutating = false;
         const idx = state.list.findIndex((x) => x.id === action.payload.id);
         if (idx >= 0) state.list[idx] = { ...state.list[idx], ...action.payload };
+      })
+      .addCase(toggleMenuAvailabilityThunk.rejected, (state, action) => {
+        state.mutating = false;
+        state.error = (action.payload as string) ?? "Failed to update menu availability";
+      })
+      .addCase(updateMenuItemThunk.pending, (state) => {
+        state.mutating = true;
+        state.error = null;
       })
       .addCase(updateMenuItemThunk.fulfilled, (state, action) => {
+        state.mutating = false;
         const idx = state.list.findIndex((x) => x.id === action.payload.id);
         if (idx >= 0) state.list[idx] = { ...state.list[idx], ...action.payload };
       })
+      .addCase(updateMenuItemThunk.rejected, (state, action) => {
+        state.mutating = false;
+        state.error = (action.payload as string) ?? "Failed to update menu item";
+      })
+      .addCase(deleteMenuItemThunk.pending, (state) => {
+        state.mutating = true;
+        state.error = null;
+      })
       .addCase(deleteMenuItemThunk.fulfilled, (state, action) => {
+        state.mutating = false;
         state.list = state.list.filter((item) => item.id !== action.payload);
+      })
+      .addCase(deleteMenuItemThunk.rejected, (state, action) => {
+        state.mutating = false;
+        state.error = (action.payload as string) ?? "Failed to delete menu item";
       });
   },
 });
 
-export const { setMenuSearch, setDietFilter, setMealTypeFilter, setCategoryFilter } =
+export const { removeMenuItemLocal, restoreMenuItemLocal, setMenuSearch, setDietFilter, setMealTypeFilter, setCategoryFilter } =
   menuSlice.actions;
 export default menuSlice.reducer;

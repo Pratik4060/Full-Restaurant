@@ -6,6 +6,7 @@ interface OffersState {
   list: Offer[];
   search: string;
   loading: boolean;
+  mutating: boolean;
   error: string | null;
 }
 
@@ -13,6 +14,7 @@ const initialState: OffersState = {
   list: [],
   search: "",
   loading: false,
+  mutating: false,
   error: null,
 };
 
@@ -91,19 +93,55 @@ const offersSlice = createSlice({
         state.loading = false;
         state.error = (action.payload as string) ?? "Failed to fetch offers";
       })
+      .addCase(createOfferThunk.pending, (state) => {
+        state.mutating = true;
+        state.error = null;
+      })
       .addCase(createOfferThunk.fulfilled, (state, action) => {
+        state.mutating = false;
         state.list.unshift(action.payload);
       })
+      .addCase(createOfferThunk.rejected, (state, action) => {
+        state.mutating = false;
+        state.error = (action.payload as string) ?? "Failed to create offer";
+      })
+      .addCase(toggleOfferThunk.pending, (state) => {
+        state.mutating = true;
+        state.error = null;
+      })
       .addCase(toggleOfferThunk.fulfilled, (state, action) => {
+        state.mutating = false;
         const idx = state.list.findIndex((x) => x.id === action.payload.id);
         if (idx >= 0) state.list[idx] = { ...state.list[idx], ...action.payload };
+      })
+      .addCase(toggleOfferThunk.rejected, (state, action) => {
+        state.mutating = false;
+        state.error = (action.payload as string) ?? "Failed to update offer";
+      })
+      .addCase(updateOfferThunk.pending, (state) => {
+        state.mutating = true;
+        state.error = null;
       })
       .addCase(updateOfferThunk.fulfilled, (state, action) => {
+        state.mutating = false;
         const idx = state.list.findIndex((x) => x.id === action.payload.id);
         if (idx >= 0) state.list[idx] = { ...state.list[idx], ...action.payload };
       })
+      .addCase(updateOfferThunk.rejected, (state, action) => {
+        state.mutating = false;
+        state.error = (action.payload as string) ?? "Failed to update offer";
+      })
+      .addCase(deleteOfferThunk.pending, (state) => {
+        state.mutating = true;
+        state.error = null;
+      })
       .addCase(deleteOfferThunk.fulfilled, (state, action) => {
+        state.mutating = false;
         state.list = state.list.filter((offer) => offer.id !== action.payload);
+      })
+      .addCase(deleteOfferThunk.rejected, (state, action) => {
+        state.mutating = false;
+        state.error = (action.payload as string) ?? "Failed to delete offer";
       });
   },
 });

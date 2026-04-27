@@ -1,6 +1,12 @@
 import { useEffect, useState } from "react";
 import { useAppDispatch } from "../../app/hooks";
-import { deleteMenuItemThunk, fetchMenuItemsThunk, toggleMenuAvailabilityThunk } from "../../features/menu/menuSlice";
+import {
+  fetchMenuItemsThunk,
+  removeMenuItemLocal,
+  restoreMenuItemLocal,
+  toggleMenuAvailabilityThunk,
+} from "../../features/menu/menuSlice";
+import { menuApi } from "../../services/menuApi";
 import type { MenuItem } from "../../types/api";
 import { Switch } from "../ui/Switch";
 
@@ -12,14 +18,23 @@ export function MenuItemCard({ item, onEdit }: { item: MenuItem; onEdit: (item: 
   const mealTypeLabel = item.type === "BREAKFAST" ? "Breakfast" : item.type === "LUNCH" ? "Lunch" : "Dinner";
   const priceValue = `₹${new Intl.NumberFormat("en-IN", { maximumFractionDigits: 0 }).format(item.price)}`;
   const [imageSrc, setImageSrc] = useState(item.imageUrl || fallbackImage);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
 
   useEffect(() => {
     setImageSrc(item.imageUrl || fallbackImage);
   }, [item.imageUrl]);
 
   const handleDelete = async () => {
-    await dispatch(deleteMenuItemThunk(item.id)).unwrap();
-    void dispatch(fetchMenuItemsThunk(undefined));
+    setDeleteError(null);
+    try {
+      dispatch(removeMenuItemLocal(item.id));
+      await menuApi.remove(item.id);
+    } catch (error) {
+      const message = (error as Error).message || "Failed to delete menu item";
+      setDeleteError(message);
+      dispatch(restoreMenuItemLocal(item.id));
+      void dispatch(fetchMenuItemsThunk(undefined));
+    }
   };
 
   return (
@@ -96,6 +111,7 @@ export function MenuItemCard({ item, onEdit }: { item: MenuItem; onEdit: (item: 
             </svg>
           </button>
         </div>
+        {deleteError ? <p className="mt-2 text-[10px] text-[#d65c5c]">{deleteError}</p> : null}
       </div>
     </div>
   );

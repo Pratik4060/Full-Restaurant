@@ -1,5 +1,5 @@
 import { useAppDispatch } from "../../app/hooks";
-import { deleteOfferThunk, toggleOfferThunk } from "../../features/offers/offersSlice";
+import { deleteOfferThunk, fetchOffersThunk, toggleOfferThunk } from "../../features/offers/offersSlice";
 import type { Offer } from "../../types/api";
 import { Switch } from "../ui/Switch";
 
@@ -27,6 +27,15 @@ export function OfferCard({
 }) {
   const dispatch = useAppDispatch();
   const statusLabel = offer.isActive ? "Valid Now" : "Inactive";
+
+  const handleDelete = async () => {
+    try {
+      await dispatch(deleteOfferThunk(offer.id)).unwrap();
+      await dispatch(fetchOffersThunk()).unwrap();
+    } catch (error) {
+      console.error("Failed to delete offer", error);
+    }
+  };
 
   return (
     <div className="overflow-hidden rounded-[12px] w-[300px] border border-[#ddd5c8] bg-white shadow-[0_6px_16px_rgba(44,33,18,0.05)]">
@@ -103,7 +112,7 @@ export function OfferCard({
           </button>
           <button
             type="button"
-            onClick={() => void dispatch(deleteOfferThunk(offer.id))}
+            onClick={() => void handleDelete()}
             className="flex h-8 w-8 items-center justify-center rounded-[4px] border border-[#ffb6b6] text-[#ff5d5d] transition hover:bg-[#fff5f5]"
             aria-label="Delete offer"
           >

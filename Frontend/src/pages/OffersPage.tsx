@@ -70,9 +70,9 @@ export function OffersPage() {
       <section className="space-y-8">
         <div>
           <p className="mb-6 text-[20px] font-semibold text-[#22201c]">Active Offers ({activeOffers.length})</p>
-          <div className="grid justify-items-start gap-5 sm:grid-cols-2 xl:grid-cols-3">
+          <div className="grid grid-cols-1 justify-items-center gap-5 sm:grid-cols-2 sm:justify-items-start xl:grid-cols-3">
             {activeOffers.map((offer) => (
-              <div key={offer.id} className="w-full max-w-[182px] sm:max-w-none">
+              <div key={offer.id} className="w-full max-w-[300px] sm:max-w-none">
                 <OfferCard offer={offer} onEdit={setEditingOffer} />
               </div>
             ))}
@@ -81,9 +81,9 @@ export function OffersPage() {
 
         <div>
           <p className="mb-6 text-[20px] font-semibold text-[#22201c]">Inactive Offers ({inactiveOffers.length})</p>
-          <div className="grid justify-items-start gap-5 sm:grid-cols-2 xl:grid-cols-3">
+          <div className="grid grid-cols-1 justify-items-center gap-5 sm:grid-cols-2 sm:justify-items-start xl:grid-cols-3">
             {inactiveOffers.map((offer) => (
-              <div key={offer.id} className="w-full max-w-[182px] sm:max-w-none">
+              <div key={offer.id} className="w-full max-w-[280px] sm:max-w-none">
                 <OfferCard offer={offer} onEdit={setEditingOffer} />
               </div>
             ))}

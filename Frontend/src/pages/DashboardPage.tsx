@@ -1,10 +1,14 @@
 import { useEffect, useMemo, useState } from "react";
+import { Link } from "react-router-dom";
 import { useAppDispatch, useAppSelector } from "../app/hooks";
 import { MetricCard } from "../components/dashboard/MetricCard";
 import { PageHeader } from "../components/layout/PageHeader";
 import { Select } from "../components/ui/Select";
 import { fetchDashboardThunk, setRevenuePeriod } from "../features/dashboard/dashboardSlice";
 import type { OrderStatusPoint, RevenuePeriod, RevenuePoint } from "../types/api";
+
+const fallbackOfferImage =
+  "https://images.unsplash.com/photo-1552566626-52f8b828add9?w=1200&auto=format&fit=crop&q=80";
 
 const statusColors: Record<OrderStatusPoint["status"], string> = {
   PENDING: "#f8a095",
@@ -369,6 +373,7 @@ export function DashboardPage() {
   }, [popularGroup, popularItems]);
 
   const popularAxisMax = 100;
+  const hasActiveOffers = activeOffers.length > 0;
 
   const pendingCount = orderStatus.find((item) => item.status === "PENDING")?.count ?? 0;
   const completedCount = orderStatus.find((item) => item.status === "COMPLETED")?.count ?? 0;
@@ -431,36 +436,46 @@ export function DashboardPage() {
         </div>
       </section>
 
-      <section className="rounded-xl border border-[#e6ddd0] bg-white p-4 shadow-[0_4px_12px_rgba(44,33,18,0.04)]">
-        <div className="mb-3 flex items-center justify-between">
-          <p className="text-[12px] font-semibold text-[#2b2b2b]">Active Offers</p>
-          <span className="text-[11px] text-[#8a847d]">View all</span>
-        </div>
-        <div className="grid gap-3 md:grid-cols-4">
-          {(activeOffers.length > 0 ? activeOffers : Array.from({ length: 4 }).map((_, index) => ({
-            id: `placeholder-${index}`,
-            title: "No active offer",
-            description: "Create an offer to surface it here.",
-            discountText: "0% OFF",
-            imageUrl: null,
-            isActive: false,
-            validUntil: null,
-            createdAt: "",
-            updatedAt: "",
-          }))).slice(0, 4).map((offer, idx) => (
-            <div key={offer.id} className="overflow-hidden rounded-lg border border-[#eadfce] bg-white">
-              <div className={`h-24 ${idx % 2 === 0 ? "bg-[linear-gradient(135deg,#936333,#dfb06d)]" : "bg-[linear-gradient(135deg,#4d2f1a,#c88f5b)]"}`} />
-              <div className="p-2.5">
-                <p className="truncate text-[11px] font-semibold text-[#23201b]">{offer.title}</p>
-                <p className="mt-1 line-clamp-2 text-[10px] leading-4 text-[#7a746c]">{offer.description}</p>
-                <span className="mt-2 inline-flex rounded bg-[#f5ecdf] px-1.5 py-1 text-[9px] font-semibold text-brand-700">
-                  {offer.discountText}
-                </span>
+      {hasActiveOffers ? (
+        <section className="rounded-xl border border-[#e6ddd0] bg-white p-4 shadow-[0_4px_12px_rgba(44,33,18,0.04)]">
+          <div className="mb-3 flex items-center justify-between">
+            <p className="text-[12px] font-semibold text-[#2b2b2b]">Active Offers</p>
+            <Link
+              to="/offers"
+              className="text-[11px] font-medium text-[#8a847d] transition hover:text-brand-700"
+            >
+              View Offers
+            </Link>
+          </div>
+          <div className="grid gap-3 md:grid-cols-4">
+            {activeOffers.slice(0, 4).map((offer) => (
+              <div key={offer.id} className="overflow-hidden rounded-lg border border-[#eadfce] bg-white">
+                <div className="h-24 overflow-hidden bg-[#f4ecdf]">
+                  {offer.imageUrl ? (
+                    <img
+                      src={offer.imageUrl}
+                      alt={offer.title}
+                      className="h-full w-full object-cover"
+                      onError={(event) => {
+                        event.currentTarget.src = fallbackOfferImage;
+                      }}
+                    />
+                  ) : (
+                    <img src={fallbackOfferImage} alt={offer.title} className="h-full w-full object-cover" />
+                  )}
+                </div>
+                <div className="p-2.5">
+                  <p className="truncate text-[11px] font-semibold text-[#23201b]">{offer.title}</p>
+                  <p className="mt-1 line-clamp-2 text-[10px] leading-4 text-[#7a746c]">{offer.description}</p>
+                  <span className="mt-2 inline-flex rounded bg-[#f5ecdf] px-1.5 py-1 text-[9px] font-semibold text-brand-700">
+                    {offer.discountText}
+                  </span>
+                </div>
               </div>
-            </div>
-          ))}
-        </div>
-      </section>
+            ))}
+          </div>
+        </section>
+      ) : null}
 
       <section className="rounded-[18px] border border-[#ddd7cf] bg-white p-5 shadow-[0_8px_28px_rgba(44,33,18,0.05)]">
         <div className="mb-6 flex items-center justify-between">
