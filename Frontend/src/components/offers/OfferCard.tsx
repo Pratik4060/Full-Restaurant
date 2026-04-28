@@ -2,6 +2,8 @@ import { useAppDispatch } from "../../app/hooks";
 import { deleteOfferThunk, fetchOffersThunk, toggleOfferThunk } from "../../features/offers/offersSlice";
 import type { Offer } from "../../types/api";
 import { Switch } from "../ui/Switch";
+import { ConfirmDialog } from "../ui/ConfirmDialog";
+import { useState } from "react";
 
 const fallbackImage =
   "https://images.unsplash.com/photo-1552566626-52f8b828add9?w=1200&auto=format&fit=crop&q=80";
@@ -27,13 +29,19 @@ export function OfferCard({
 }) {
   const dispatch = useAppDispatch();
   const statusLabel = offer.isActive ? "Valid Now" : "Inactive";
+  const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false);
+  const [deleting, setDeleting] = useState(false);
 
   const handleDelete = async () => {
     try {
+      setDeleting(true);
       await dispatch(deleteOfferThunk(offer.id)).unwrap();
       await dispatch(fetchOffersThunk()).unwrap();
     } catch (error) {
       console.error("Failed to delete offer", error);
+    } finally {
+      setDeleting(false);
+      setConfirmDeleteOpen(false);
     }
   };
 
@@ -71,19 +79,15 @@ export function OfferCard({
 
         <p className="mt-3 min-h-[44px] text-[11px] leading-5 text-[#5f5a53]">{offer.description}</p>
 
-        <div className="mt-2 flex items-center gap-1 text-[11px] text-[#3b3835]">
-          <span>Valid till:</span>
-          <span className="font-semibold">{formatDate(offer.validUntil)}</span>
-        </div>
 
-        <div className="mt-3 border-t border-[#ece6db] pt-3 text-[12px] text-[#2d2925]">
+        <div className="mt-3  border-[#ece6db] pt-3 text-[12px] text-[#2d2925]">
           <div className="flex items-center gap-1 text-[#8b857c]">
             <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
               <rect x="3" y="4" width="18" height="17" rx="2" />
               <path d="M8 2v4M16 2v4M3 10h18" />
             </svg>
             <span>
-              {formatDate(offer.createdAt)} - {formatDate(offer.validUntil)}
+              {formatDate(offer.validFrom)} - {formatDate(offer.validUntil)}
             </span>
           </div>
         </div>
@@ -95,24 +99,12 @@ export function OfferCard({
             className="flex h-8 flex-1 items-center justify-center rounded-[4px] border border-[#9d7b42] bg-[#9d7b42]  text-[12px] font-medium text-white transition hover:bg-[#8a6835]"
           >
             <span className="inline-flex items-center gap-2 ">
-              <svg
-                viewBox="0 0 24 24"
-                className="h-4 w-4"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="1.8"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              >
-                <path d="M12 20h9" />
-                <path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z" />
-              </svg>
               Edit
             </span>
           </button>
           <button
             type="button"
-            onClick={() => void handleDelete()}
+            onClick={() => setConfirmDeleteOpen(true)}
             className="flex h-8 w-8 items-center justify-center rounded-[4px] border border-[#ffb6b6] text-[#ff5d5d] transition hover:bg-[#fff5f5]"
             aria-label="Delete offer"
           >
@@ -126,6 +118,14 @@ export function OfferCard({
           </button>
         </div>
       </div>
+
+      <ConfirmDialog
+        open={confirmDeleteOpen}
+        onCancel={() => setConfirmDeleteOpen(false)}
+        onConfirm={handleDelete}
+        pending={deleting}
+        message={`Are you sure you want to delete "${offer.title}"?`}
+      />
     </div>
   );
 }

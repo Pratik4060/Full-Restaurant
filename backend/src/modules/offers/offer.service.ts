@@ -7,6 +7,7 @@ type OfferCreatePayload = {
   discountText: string;
   imageUrl?: string | undefined;
   isActive?: boolean | undefined;
+  validFrom?: string | undefined;
   validUntil?: string | undefined;
 };
 
@@ -16,6 +17,7 @@ type OfferUpdatePayload = {
   discountText?: string | undefined;
   imageUrl?: string | undefined;
   isActive?: boolean | undefined;
+  validFrom?: string | undefined;
   validUntil?: string | undefined;
 };
 
@@ -34,6 +36,9 @@ export const createOffer = async (payload: OfferCreatePayload) => {
       discountText: payload.discountText,
       imageUrl: payload.imageUrl ?? null,
       isActive: payload.isActive ?? true,
+      ...(payload.validFrom !== undefined
+        ? { validFrom: payload.validFrom ? new Date(payload.validFrom) : null }
+        : {}),
       ...(payload.validUntil !== undefined
         ? { validUntil: payload.validUntil ? new Date(payload.validUntil) : null }
         : {}),
@@ -51,6 +56,9 @@ export const updateOffer = async (offerId: string, payload: OfferUpdatePayload) 
   if (payload.discountText !== undefined) data.discountText = payload.discountText;
   if (payload.imageUrl !== undefined) data.imageUrl = payload.imageUrl;
   if (payload.isActive !== undefined) data.isActive = payload.isActive;
+  if (payload.validFrom !== undefined) {
+    data.validFrom = payload.validFrom ? new Date(payload.validFrom) : null;
+  }
   if (payload.validUntil !== undefined) {
     data.validUntil = payload.validUntil ? new Date(payload.validUntil) : null;
   }

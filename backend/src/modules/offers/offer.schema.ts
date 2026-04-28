@@ -6,6 +6,7 @@ const baseOfferSchema = z.object({
   discountText: z.string().min(1),
   imageUrl: z.string().min(1).optional(),
   isActive: z.boolean().optional(),
+  validFrom: z.string().datetime().optional(),
   validUntil: z.string().datetime().optional()
 });
 

@@ -6,6 +6,7 @@ import { MenuItemCard } from "../components/menu/MenuItemCard";
 import { Button } from "../components/ui/Button";
 import { Input } from "../components/ui/Input";
 import { Select } from "../components/ui/Select";
+import plus from "../../public/assets/plus.svg"
 import {
   fetchMenuItemsThunk,
   setCategoryFilter,
@@ -89,7 +90,11 @@ export function MenuItemsPage() {
               setOpen(true);
             }}
           >
-            + Add Item
+            <span className="flex gap-2 ">
+            <img src={plus} alt="plus"/>
+             Add Item
+
+            </span>
           </Button>
         }
       />

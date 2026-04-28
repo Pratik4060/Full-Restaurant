@@ -242,25 +242,28 @@ const splitPopularLabel = (name: string) => {
 };
 
 function StatusPieChart({ items }: { items: OrderStatusPoint[] }) {
-  const width = 360;
-  const height = 360;
-  const cx = 180;
-  const cy = 180;
-  const radius = 95;
-  const labelLayout: Record<
+  // width: 640 and height: 460 to accommodate a larger chart and spread-out labels
+  const width = 640;
+  const height = 460;
+  const cx = 320;
+  const cy = 230;
+  const radius = 115; // Increased radius for a larger pie chart
+  const gapFromPie = 12;
+
+  const labelConfig: Record<
     OrderStatusPoint["status"],
     {
       textX: number;
       textY: number;
-      textAnchor: "start" | "end";
-      elbowX: number;
-      elbowY: number;
+      anchor: "start" | "end";
+      underlineWidth: number;
+      dir: 1 | -1;
     }
   > = {
-    PREPARING: { textX: 32, textY: 62, textAnchor: "start", elbowX: 82, elbowY: 84 },
-    PENDING: { textX: 328, textY: 62, textAnchor: "end", elbowX: 278, elbowY: 84 },
-    READY: { textX: 32, textY: 326, textAnchor: "start", elbowX: 82, elbowY: 306 },
-    COMPLETED: { textX: 328, textY: 326, textAnchor: "end", elbowX: 278, elbowY: 306 },
+    PREPARING: { textX: 20, textY: 60, anchor: "start", underlineWidth: 120, dir: 1 },
+    PENDING: { textX: 620, textY: 60, anchor: "end", underlineWidth: 120, dir: -1 },
+    READY: { textX: 20, textY: 400, anchor: "start", underlineWidth: 120, dir: 1 },
+    COMPLETED: { textX: 620, textY: 400, anchor: "end", underlineWidth: 120, dir: -1 },
   };
 
   const statusMap = new Map(items.map((item) => [item.status, item.count]));
@@ -269,88 +272,87 @@ function StatusPieChart({ items }: { items: OrderStatusPoint[] }) {
     count: statusMap.get(status) ?? 0,
   }));
   const total = orderedItems.reduce((sum, item) => sum + item.count, 0);
-  const visibleSegments = orderedItems.filter((item) => item.count > 0);
 
-  let cursor = -90;
-
-  const segments = visibleSegments.map((item) => {
-    const sweep = total > 0 ? (item.count / total) * 360 : 0;
-    const start = cursor;
-    const end = cursor + sweep;
-    cursor = end;
-    const mid = start + sweep / 2;
-    const inner = polarToCartesian(cx, cy, radius, mid);
-    const target = labelLayout[item.status];
-    const connector = {
-      x: target.elbowX,
-      y: target.elbowY,
-    };
-
-    return {
-      ...item,
-      start,
-      end,
-      mid,
-      path: total > 0 ? describeArc(cx, cy, radius, start, end) : "",
-      connectorStart: inner,
-      connectorMid: {
-        x: cx + Math.cos(((mid - 90) * Math.PI) / 180) * 118,
-        y: cy + Math.sin(((mid - 90) * Math.PI) / 180) * 118,
-      },
-      connector,
-      label: target,
-    };
-  });
+  let currentAngle = -90;
 
   return (
-    <div className="relative h-[360px] overflow-visible rounded-[24px] bg-white">
-      <svg viewBox={`0 0 ${width} ${height}`} className="absolute inset-0 h-full w-full overflow-visible">
+    <div className="relative h-[460px] w-full flex justify-center items-center bg-white rounded-[24px]">
+      <svg viewBox={`0 0 ${width} ${height}`} className="h-full w-full overflow-visible">
         {total === 0 ? (
           <circle cx={cx} cy={cy} r={radius} fill="#f3ece1" />
-        ) : visibleSegments.length === 1 ? (
-          <circle cx={cx} cy={cy} r={radius} fill={statusColors[visibleSegments[0].status]} />
         ) : (
-          segments.map((segment) => (
-            <g key={segment.status}>
-              <path d={segment.path} fill={statusColors[segment.status]} stroke={statusColors[segment.status]} strokeWidth="1" />
-              <polyline
-                points={`${segment.connectorStart.x},${segment.connectorStart.y} ${segment.connectorMid.x},${segment.connectorMid.y} ${segment.connector.x},${segment.connector.y}`}
-                fill="none"
-                stroke={statusColors[segment.status]}
-                strokeWidth="1.2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              />
-            </g>
-          ))
+          orderedItems.map((item) => {
+            if (item.count <= 0) return null;
+
+            const sweep = (item.count / total) * 360;
+            const start = currentAngle;
+            const end = currentAngle + sweep;
+            const midAngle = start + sweep / 2;
+            currentAngle = end;
+
+            const targetPoint = polarToCartesian(cx, cy, radius + gapFromPie, midAngle);
+            const config = labelConfig[item.status];
+            
+            const lineY = config.textY + 6;
+            const lineStartX = config.textX;
+            const lineEndX = config.textX + (config.underlineWidth * config.dir);
+
+            // FIX: Calculate angle using the diagonal segment (from lineEndX to targetPoint)
+            // This ensures the arrowhead is perfectly aligned with the incoming line.
+            const dx = targetPoint.x - lineEndX;
+            const dy = targetPoint.y - lineY;
+            const angleOfDiagonal = Math.atan2(dy, dx);
+            
+            const arrowLen = 11;
+            const arrowSpread = 0.55;
+
+            const p1 = {
+              x: targetPoint.x - arrowLen * Math.cos(angleOfDiagonal - arrowSpread),
+              y: targetPoint.y - arrowLen * Math.sin(angleOfDiagonal - arrowSpread),
+            };
+            const p2 = {
+              x: targetPoint.x - arrowLen * Math.cos(angleOfDiagonal + arrowSpread),
+              y: targetPoint.y - arrowLen * Math.sin(angleOfDiagonal + arrowSpread),
+            };
+
+            return (
+              <g key={item.status}>
+                {/* Larger Pie Slice */}
+                <path d={describeArc(cx, cy, radius, start, end)} fill={statusColors[item.status]} />
+                
+                {/* Connector Path */}
+                <path
+                  d={`M ${lineStartX} ${lineY} L ${lineEndX} ${lineY} L ${targetPoint.x} ${targetPoint.y}`}
+                  fill="none"
+                  stroke={statusColors[item.status]}
+                  strokeWidth="1.5"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
+
+                {/* Aligned Arrowhead */}
+                <polyline
+                  points={`${p1.x},${p1.y} ${targetPoint.x},${targetPoint.y} ${p2.x},${p2.y}`}
+                  fill="none"
+                  stroke={statusColors[item.status]}
+                  strokeWidth="1.5"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
+
+                <text
+                  x={config.textX}
+                  y={config.textY}
+                  textAnchor={config.anchor}
+                  className="fill-[#1f1f1f] text-[16px] font-bold"
+                >
+                  {statusLabels[item.status]}: {item.count}
+                </text>
+              </g>
+            );
+          })
         )}
-
-        {total > 0 && visibleSegments.length === 1 ? (
-          <text x={cx} y={cy + 6} textAnchor="middle" className="fill-white text-[22px] font-bold">
-            {visibleSegments[0].count}
-          </text>
-        ) : null}
       </svg>
-
-      {pieOrder.map((status) => {
-        const item = orderedItems.find((entry) => entry.status === status);
-        const label = labelLayout[status];
-        if (!item || item.count <= 0) return null;
-        return (
-          <div
-            key={status}
-            className="pointer-events-none absolute text-[11px] font-semibold text-[#1f1f1f]"
-            style={{
-              left: label.textAnchor === "start" ? label.textX : undefined,
-              right: label.textAnchor === "end" ? 32 : undefined,
-              top: label.textY,
-              textAlign: label.textAnchor,
-            }}
-          >
-            {statusLabels[status]}:{item.count}
-          </div>
-        );
-      })}
     </div>
   );
 }
@@ -466,7 +468,7 @@ export function DashboardPage() {
                 </div>
                 <div className="p-2.5">
                   <p className="truncate text-[11px] font-semibold text-[#23201b]">{offer.title}</p>
-                  <p className="mt-1 line-clamp-2 text-[10px] leading-4 text-[#7a746c]">{offer.description}</p>
+                  <p className="mt-1 line-clamp-2 text-[10px] leading-4 text-gray-700">{offer.description}</p>
                   <span className="mt-2 inline-flex rounded bg-[#f5ecdf] px-1.5 py-1 text-[9px] font-semibold text-brand-700">
                     {offer.discountText}
                   </span>
@@ -517,7 +519,7 @@ export function DashboardPage() {
           </div>
         </div>
 
-        <div className="rounded-[16px] border border-[#f0e9df] bg-white px-4 pb-4 pt-4">
+        <div>
           <div className="relative h-[312px]">
             <svg viewBox="0 0 860 306" className="h-full w-full overflow-visible">
               <line x1="52" y1="22" x2="52" y2="248" stroke="#cfc7bd" strokeWidth="1.2" />

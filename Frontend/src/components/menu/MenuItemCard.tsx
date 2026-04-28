@@ -9,7 +9,9 @@ import {
 import { menuApi } from "../../services/menuApi";
 import type { MenuItem } from "../../types/api";
 import { Switch } from "../ui/Switch";
-
+import { ConfirmDialog } from "../ui/ConfirmDialog";
+import deletebtn  from  "../../../public/assets/delete.svg"
+import editbtn from "../../../public/assets/edit.svg"
 const fallbackImage =
   "https://images.unsplash.com/photo-1547592180-85f173990554?w=1200&auto=format&fit=crop&q=80";
 
@@ -19,6 +21,8 @@ export function MenuItemCard({ item, onEdit }: { item: MenuItem; onEdit: (item: 
   const priceValue = `₹${new Intl.NumberFormat("en-IN", { maximumFractionDigits: 0 }).format(item.price)}`;
   const [imageSrc, setImageSrc] = useState(item.imageUrl || fallbackImage);
   const [deleteError, setDeleteError] = useState<string | null>(null);
+  const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false);
+  const [deleting, setDeleting] = useState(false);
 
   useEffect(() => {
     setImageSrc(item.imageUrl || fallbackImage);
@@ -26,6 +30,7 @@ export function MenuItemCard({ item, onEdit }: { item: MenuItem; onEdit: (item: 
 
   const handleDelete = async () => {
     setDeleteError(null);
+    setDeleting(true);
     try {
       dispatch(removeMenuItemLocal(item.id));
       await menuApi.remove(item.id);
@@ -34,6 +39,9 @@ export function MenuItemCard({ item, onEdit }: { item: MenuItem; onEdit: (item: 
       setDeleteError(message);
       dispatch(restoreMenuItemLocal(item.id));
       void dispatch(fetchMenuItemsThunk(undefined));
+    } finally {
+      setDeleting(false);
+      setConfirmDeleteOpen(false);
     }
   };
 
@@ -77,42 +85,33 @@ export function MenuItemCard({ item, onEdit }: { item: MenuItem; onEdit: (item: 
         <div className="mt-auto flex items-center justify-between gap-5 border-t border-[#ece6db] pt-3">
           <button
             type="button"
-            className="flex h-9 flex-[0.8] items-center justify-center rounded-[4px] border border-[#9d7b42] bg-[#9d7b42] px-3 text-[12px] font-medium text-white transition hover:bg-[#8a6835]"
+            className="flex h-9 w-30 items-center justify-center rounded-[4px]  bg-[#9d7b42]   font-medium text-white transition hover:bg-[#8a6835]"
             onClick={() => onEdit(item)}
           >
             <span className="inline-flex items-center gap-2">
-              <svg
-                viewBox="0 0 24 24"
-                className="h-4 w-4"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="1.8"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              >
-                <path d="M12 20h9" />
-                <path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z" />
-              </svg>
+              <img  src= {editbtn} alt=""/>
               Edit
             </span>
           </button>
           <button
             className="flex h-9 w-12 items-center justify-center rounded-[4px] border border-[#ff6f6f] bg-white text-[#ff5d5d] transition hover:bg-[#fff5f5]"
-            onClick={() => void handleDelete()}
+            onClick={() => setConfirmDeleteOpen(true)}
             type="button"
             aria-label="Delete item"
           >
-            <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M3 6h18" />
-              <path d="M8 6V4h8v2" />
-              <path d="M19 6l-1 13H6L5 6" />
-              <path d="M10 11v5" />
-              <path d="M14 11v5" />
-            </svg>
+            <img src={deletebtn} alt="delete"/>
           </button>
         </div>
         {deleteError ? <p className="mt-2 text-[10px] text-[#d65c5c]">{deleteError}</p> : null}
       </div>
+
+      <ConfirmDialog
+        open={confirmDeleteOpen}
+        onCancel={() => setConfirmDeleteOpen(false)}
+        onConfirm={handleDelete}
+        pending={deleting}
+        message={`Are you sure you want to delete "${item.name}"?`}
+      />
     </div>
   );
 }

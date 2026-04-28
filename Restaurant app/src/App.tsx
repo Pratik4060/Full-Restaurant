@@ -10,7 +10,6 @@ import TrackOrderPage from './pages/OrderTrackingPage';
 import PaymentSuccessPage from './pages/PaymentSuccessPage';
 import type { AppStep, UserData, MealCategory, FoodType } from './types';
 import { useOrder } from './contexts/OrderContext';
-import { restaurantApi } from './services/restaurantApi';
 
 const getTableNumberFromUrl = (): string => {
   const params = new URLSearchParams(window.location.search);
@@ -60,14 +59,6 @@ const App: React.FC = () => {
 
   const handleFormSubmit = async (data: UserData): Promise<void> => {
     window.localStorage.setItem('restaurant-user-data', JSON.stringify(data));
-    try {
-      await restaurantApi.registerCustomer({
-        customerName: data.name.trim(),
-        customerPhone: data.mobile.trim() || undefined,
-      });
-    } catch (error) {
-      console.error('Customer registration failed:', error);
-    }
     setUserData(data);
     setStep('home');
   };

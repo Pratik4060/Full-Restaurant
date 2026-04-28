@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useAppDispatch, useAppSelector } from "../app/hooks";
 import { MetricCard } from "../components/dashboard/MetricCard";
+import { ConfirmDialog } from "../components/ui/ConfirmDialog";
 import { PageHeader } from "../components/layout/PageHeader";
 import { Button } from "../components/ui/Button";
 import { Input } from "../components/ui/Input";
@@ -29,6 +30,7 @@ const roleTone: Record<UserRole, string> = {
 };
 
 const roleOptions: UserRole[] = ["ADMIN", "MANAGER", "KITCHEN", "CASHIER", "WAITER"];
+const sanitizeNameInput = (value: string) => value.replace(/[^a-zA-Z\s]/g, "");
 
 type UserFormState = {
   name: string;
@@ -38,12 +40,43 @@ type UserFormState = {
   isActive: boolean;
 };
 
+type UserFormErrors = Partial<Record<"name" | "email" | "password", string>>;
+
+type DeleteRequest =
+  | { kind: "single"; id: string }
+  | { kind: "many"; ids: string[] };
+
 const emptyForm: UserFormState = {
   name: "",
   email: "",
   password: "",
   role: "MANAGER",
   isActive: true,
+};
+
+const emailPattern = /^[^\s@]+@[^\s@]+\.com$/i;
+
+const validateUserForm = (form: UserFormState, editingUser: UserRow | null): UserFormErrors => {
+  const errors: UserFormErrors = {};
+  const name = form.name.trim();
+  const email = form.email.trim();
+  const password = form.password.trim();
+
+  if (name.length < 2) {
+    errors.name = "Name must be at least 2 characters";
+  }
+
+  if (!emailPattern.test(email)) {
+    errors.email = "Enter a valid email address";
+  }
+
+  if (!editingUser && password.length === 0) {
+    errors.password = "Password is required";
+  } else if (password.length > 0 && password.length < 6) {
+    errors.password = "Password must be at least 6 characters";
+  }
+
+  return errors;
 };
 
 const formatDate = (value: string) =>
@@ -89,9 +122,12 @@ export function UsersPage() {
   const dispatch = useAppDispatch();
   const { summary, rows, pagination, search, mutating } = useAppSelector((state) => state.users);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
+  const [deleteRequest, setDeleteRequest] = useState<DeleteRequest | null>(null);
   const [modalOpen, setModalOpen] = useState(false);
   const [editingUser, setEditingUser] = useState<UserRow | null>(null);
   const [form, setForm] = useState<UserFormState>(emptyForm);
+  const [formErrors, setFormErrors] = useState<UserFormErrors>({});
+  const [showPassword, setShowPassword] = useState(false);
 
   useEffect(() => {
     void dispatch(fetchUsersSummaryThunk());
@@ -115,6 +151,8 @@ export function UsersPage() {
   const openCreate = () => {
     setEditingUser(null);
     setForm(emptyForm);
+    setFormErrors({});
+    setShowPassword(false);
     setModalOpen(true);
   };
 
@@ -127,6 +165,8 @@ export function UsersPage() {
       role: user.role,
       isActive: user.status,
     });
+    setFormErrors({});
+    setShowPassword(false);
     setModalOpen(true);
   };
 
@@ -141,7 +181,14 @@ export function UsersPage() {
     );
   };
 
-  const handleSubmit = async () => {
+  const handleSubmit = async (event?: React.FormEvent<HTMLFormElement>) => {
+    event?.preventDefault();
+    const errors = validateUserForm(form, editingUser);
+    setFormErrors(errors);
+    if (Object.keys(errors).length > 0) {
+      return;
+    }
+
     if (editingUser) {
       await dispatch(
         updateUserThunk({
@@ -171,11 +218,20 @@ export function UsersPage() {
     setModalOpen(false);
   };
 
-  const handleDeleteSelected = async () => {
-    for (const id of visibleSelectedIds) {
-      await dispatch(deleteUserThunk(id));
+  const handleDeleteRequest = async () => {
+    if (!deleteRequest) return;
+
+    if (deleteRequest.kind === "single") {
+      await dispatch(deleteUserThunk(deleteRequest.id));
+      setSelectedIds((current) => current.filter((id) => id !== deleteRequest.id));
+    } else {
+      for (const id of deleteRequest.ids) {
+        await dispatch(deleteUserThunk(id));
+      }
+      setSelectedIds((current) => current.filter((id) => !deleteRequest.ids.includes(id)));
     }
-    setSelectedIds([]);
+
+    setDeleteRequest(null);
     await refreshUsers();
   };
 
@@ -229,7 +285,7 @@ export function UsersPage() {
           <button
             type="button"
             disabled={visibleSelectedIds.length === 0 || mutating}
-            onClick={() => void handleDeleteSelected()}
+            onClick={() => setDeleteRequest({ kind: "many", ids: visibleSelectedIds })}
             className="inline-flex h-11 min-w-[172px] items-center justify-center gap-3 rounded-[6px] border border-[#ff4f4f] bg-white px-5 text-[15px] font-medium text-[#ff3f3f] transition hover:bg-[#fff5f5] disabled:cursor-not-allowed disabled:opacity-50"
           >
             <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
@@ -322,10 +378,7 @@ export function UsersPage() {
                           </button>
                           <button
                             type="button"
-                            onClick={async () => {
-                              await dispatch(deleteUserThunk(row.id));
-                              await refreshUsers();
-                            }}
+                            onClick={() => setDeleteRequest({ kind: "single", id: row.id })}
                             className="inline-flex h-8 w-8 items-center justify-center rounded-[6px] bg-[#efefef] text-[#ff5a5a] transition hover:bg-[#f8efef]"
                             aria-label="Delete user"
                           >
@@ -365,24 +418,73 @@ export function UsersPage() {
       </section>
 
       <Modal open={modalOpen} onClose={() => setModalOpen(false)} title={editingUser ? "Edit User" : "Add User"}>
+        <form onSubmit={(event) => void handleSubmit(event)}>
         <div className="grid gap-4 md:grid-cols-2">
           <div className="space-y-2">
             <label className="text-[12px] font-medium text-[#5f5a53]">Name</label>
-            <Input value={form.name} onChange={(event) => setForm({ ...form, name: event.target.value })} />
+            <Input
+              value={form.name}
+              onChange={(event) => {
+                setForm({ ...form, name: sanitizeNameInput(event.target.value) });
+                if (formErrors.name) setFormErrors((current) => ({ ...current, name: undefined }));
+              }}
+              inputMode="text"
+              autoComplete="name"
+              required
+            />
+            {formErrors.name ? <p className="text-[11px] text-[#d65c5c]">{formErrors.name}</p> : null}
           </div>
           <div className="space-y-2">
             <label className="text-[12px] font-medium text-[#5f5a53]">Email</label>
-            <Input value={form.email} onChange={(event) => setForm({ ...form, email: event.target.value })} />
+            <Input
+              type="email"
+              value={form.email}
+              onChange={(event) => {
+                setForm({ ...form, email: event.target.value });
+                if (formErrors.email) setFormErrors((current) => ({ ...current, email: undefined }));
+              }}
+              autoComplete="email"
+              required
+            />
+            {formErrors.email ? <p className="text-[11px] text-[#d65c5c]">{formErrors.email}</p> : null}
           </div>
           <div className="space-y-2">
             <label className="text-[12px] font-medium text-[#5f5a53]">
               {editingUser ? "New Password (optional)" : "Password"}
             </label>
-            <Input
-              type="password"
-              value={form.password}
-              onChange={(event) => setForm({ ...form, password: event.target.value })}
-            />
+            <div className="relative">
+              <Input
+                type={showPassword ? "text" : "password"}
+                value={form.password}
+                onChange={(event) => {
+                  setForm({ ...form, password: event.target.value });
+                  if (formErrors.password) setFormErrors((current) => ({ ...current, password: undefined }));
+                }}
+                required={!editingUser}
+                className="pr-11"
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword((current) => !current)}
+                className="absolute inset-y-0 right-0 flex items-center justify-center px-3 text-[#7a746b] transition hover:text-[#2f2b26]"
+                aria-label={showPassword ? "Hide password" : "Show password"}
+              >
+                {showPassword ? (
+                  <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M3 3l18 18" />
+                    <path d="M10.6 10.6A2 2 0 0 0 13.4 13.4" />
+                    <path d="M9.9 5.1A10.5 10.5 0 0 1 12 5c7 0 10 7 10 7a16 16 0 0 1-4.3 5.5" />
+                    <path d="M6.6 6.6C3.7 8.3 2 12 2 12s3 7 10 7c1 0 1.9-.1 2.8-.4" />
+                  </svg>
+                ) : (
+                  <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z" />
+                    <circle cx="12" cy="12" r="3" />
+                  </svg>
+                )}
+              </button>
+            </div>
+            {formErrors.password ? <p className="text-[11px] text-[#d65c5c]">{formErrors.password}</p> : null}
           </div>
           <div className="space-y-2">
             <label className="text-[12px] font-medium text-[#5f5a53]">Role</label>
@@ -404,14 +506,30 @@ export function UsersPage() {
         </div>
 
         <div className="mt-6 flex flex-col-reverse gap-3 sm:flex-row sm:justify-between">
-          <Button variant="danger" className="h-11 px-8" onClick={() => setModalOpen(false)}>
+          <Button type="button" variant="danger" className="h-11 px-8" onClick={() => setModalOpen(false)}>
             Cancel
           </Button>
-          <Button className="h-11 px-8" disabled={mutating} onClick={() => void handleSubmit()}>
+          <Button type="submit" className="h-11 px-8" disabled={mutating}>
             {editingUser ? "Update User" : "Create User"}
           </Button>
         </div>
+        </form>
       </Modal>
+
+      <ConfirmDialog
+        open={deleteRequest !== null}
+        title="Delete Users"
+        message={
+          deleteRequest?.kind === "single"
+            ? "Are you sure you want to delete this user?"
+            : `Are you sure you want to delete ${deleteRequest?.ids.length ?? 0} selected users?`
+        }
+        confirmLabel="Yes, Delete"
+        cancelLabel="No"
+        onCancel={() => setDeleteRequest(null)}
+        onConfirm={handleDeleteRequest}
+        pending={mutating}
+      />
     </div>
   );
 }

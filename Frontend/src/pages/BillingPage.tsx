@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { useAppDispatch, useAppSelector } from "../app/hooks";
 import { PageHeader } from "../components/layout/PageHeader";
+import { ConfirmDialog } from "../components/ui/ConfirmDialog";
 import { Button } from "../components/ui/Button";
 import { Input } from "../components/ui/Input";
 import { Modal } from "../components/ui/Modal";
@@ -21,6 +22,10 @@ import {
 import type { OrderStatus, PaymentMethod, PaymentStatus, PendingPaymentRow, RecentPaymentRow } from "../types/api";
 
 type Tone = "green" | "orange" | "emerald" | "violet";
+
+type DeleteRequest =
+  | { kind: "pending"; ids: string[] }
+  | { kind: "recent"; ids: string[] };
 
 const formatCurrency = (value: number) =>
   `₹ ${new Intl.NumberFormat("en-IN", {
@@ -281,6 +286,7 @@ export function BillingPage() {
   const [selectedRecentIds, setSelectedRecentIds] = useState<string[]>([]);
   const [paymentTarget, setPaymentTarget] = useState<PendingPaymentRow | null>(null);
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>("CASH");
+  const [deleteRequest, setDeleteRequest] = useState<DeleteRequest | null>(null);
 
   useEffect(() => {
     void dispatch(fetchBillingSummaryThunk(period));
@@ -340,19 +346,22 @@ export function BillingPage() {
     );
   };
 
-  const deleteSelectedPending = async () => {
-    for (const id of visiblePendingIds) {
-      await dispatch(deletePendingOrderThunk(id));
-    }
-    setSelectedPendingIds([]);
-    await refreshBilling();
-  };
+  const handleDeleteRequest = async () => {
+    if (!deleteRequest) return;
 
-  const deleteSelectedRecent = async () => {
-    for (const id of visibleRecentIds) {
-      await dispatch(deletePaymentThunk(id));
+    if (deleteRequest.kind === "pending") {
+      for (const id of deleteRequest.ids) {
+        await dispatch(deletePendingOrderThunk(id));
+      }
+      setSelectedPendingIds([]);
+    } else {
+      for (const id of deleteRequest.ids) {
+        await dispatch(deletePaymentThunk(id));
+      }
+      setSelectedRecentIds([]);
     }
-    setSelectedRecentIds([]);
+
+    setDeleteRequest(null);
     await refreshBilling();
   };
 
@@ -449,10 +458,10 @@ export function BillingPage() {
               className="h-full border-0 bg-transparent px-4 text-[14px] placeholder:text-[#8f8a82] focus:bg-transparent"
             />
           </label>
-                    <button
+          <button
             type="button"
             disabled={visiblePendingIds.length === 0 || mutating}
-            onClick={() => void deleteSelectedPending()}
+            onClick={() => setDeleteRequest({ kind: "pending", ids: visiblePendingIds })}
             className="inline-flex h-11 min-w-[176px] items-center justify-center gap-3 rounded-[6px] border border-[#ff4f4f] bg-white px-5 text-[15px] font-medium text-[#ff3f3f] transition hover:bg-[#fff5f5] disabled:cursor-not-allowed disabled:opacity-50"
           >
             <TrashIcon />
@@ -548,7 +557,7 @@ export function BillingPage() {
           <button
             type="button"
             disabled={visibleRecentIds.length === 0 || mutating}
-            onClick={() => void deleteSelectedRecent()}
+            onClick={() => setDeleteRequest({ kind: "recent", ids: visibleRecentIds })}
             className="inline-flex h-11 min-w-[176px] items-center justify-center gap-3 rounded-[6px] border border-[#ff4f4f] bg-white px-5 text-[15px] font-medium text-[#ff3f3f] transition hover:bg-[#fff5f5] disabled:cursor-not-allowed disabled:opacity-50"
           >
             <TrashIcon />
@@ -638,6 +647,21 @@ export function BillingPage() {
           onPageChange={(page) => dispatch(setRecentPage(page))}
         />
       </section>
+
+      <ConfirmDialog
+        open={deleteRequest !== null}
+        title="Delete Payments"
+        message={
+          deleteRequest?.kind === "pending"
+            ? `Are you sure you want to delete ${deleteRequest?.ids.length ?? 0} pending payment(s)?`
+            : `Are you sure you want to delete ${deleteRequest?.ids.length ?? 0} recent payment(s)?`
+        }
+        confirmLabel="Yes, Delete"
+        cancelLabel="No"
+        onCancel={() => setDeleteRequest(null)}
+        onConfirm={handleDeleteRequest}
+        pending={mutating}
+      />
 
       <Modal open={Boolean(paymentTarget)} onClose={() => setPaymentTarget(null)} title="Process Payment">
         {paymentTarget ? (

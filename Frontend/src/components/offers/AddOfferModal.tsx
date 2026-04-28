@@ -39,11 +39,17 @@ const readFileAsDataUrl = (file: File) =>
     reader.readAsDataURL(file);
   });
 
-const formatDatetimeLocal = (value: string | null) => {
-  if (!value) return "";
-  const date = new Date(value);
+const dateInputToIso = (value: string) => new Date(`${value}T12:00:00`).toISOString();
+const clampNonNegativeNumberInput = (value: string) => {
+  if (value === "") return value;
+  const parsed = Number(value);
+  if (Number.isNaN(parsed)) return "";
+  return String(Math.max(0, parsed));
+};
+const getTodayDateInputValue = () => {
+  const now = new Date();
   const pad = (n: number) => String(n).padStart(2, "0");
-  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}`;
+  return `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`;
 };
 
 export function AddOfferModal({
@@ -60,6 +66,7 @@ export function AddOfferModal({
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const [form, setForm] = useState<OfferFormState>(createEmptyForm());
   const [submitError, setSubmitError] = useState<string | null>(null);
+  const todayDate = getTodayDateInputValue();
 
   useEffect(() => {
     if (!open) return;
@@ -68,17 +75,17 @@ export function AddOfferModal({
       const percentMatch = discountText.match(/(\d+)\s*%/);
       const amountMatch = discountText.match(/₹\s*(\d+)/);
 
-      setForm({
-        title: initialOffer.title,
-        description: initialOffer.description,
-        discountType: amountMatch ? "AMOUNT" : "PERCENT",
-        discountValue: percentMatch?.[1] ?? amountMatch?.[1] ?? "20",
-        imageUrl: initialOffer.imageUrl ?? "",
+        setForm({
+          title: initialOffer.title,
+          description: initialOffer.description,
+          discountType: amountMatch ? "AMOUNT" : "PERCENT",
+          discountValue: percentMatch?.[1] ?? amountMatch?.[1] ?? "20",
+          imageUrl: initialOffer.imageUrl ?? "",
         validFrom: "",
-        validUntil: formatDatetimeLocal(initialOffer.validUntil),
-        minimumOrderAmount: "10",
-        isActive: initialOffer.isActive,
-      });
+          validUntil: "",
+          minimumOrderAmount: "10",
+          isActive: initialOffer.isActive,
+        });
     } else {
       setForm(createEmptyForm());
     }
@@ -88,6 +95,18 @@ export function AddOfferModal({
   const submit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setSubmitError(null);
+    if (form.validFrom && form.validFrom < todayDate) {
+      setSubmitError("Valid From cannot be before today");
+      return;
+    }
+    if (form.validUntil && form.validUntil < todayDate) {
+      setSubmitError("Valid Until cannot be before today");
+      return;
+    }
+    if (form.validFrom && form.validUntil && form.validUntil < form.validFrom) {
+      setSubmitError("Valid Until cannot be before Valid From");
+      return;
+    }
     const discountText =
       form.discountType === "PERCENT" ? `${form.discountValue}% OFF` : `₹${form.discountValue} OFF`;
 
@@ -96,7 +115,8 @@ export function AddOfferModal({
       description: form.description,
       discountText,
       imageUrl: form.imageUrl || undefined,
-      validUntil: form.validUntil ? new Date(form.validUntil).toISOString() : undefined,
+      validFrom: form.validFrom ? dateInputToIso(form.validFrom) : undefined,
+      validUntil: form.validUntil ? dateInputToIso(form.validUntil) : undefined,
       isActive: form.isActive,
     };
 
@@ -132,7 +152,7 @@ export function AddOfferModal({
           <div>
             <label className="mb-1.5 block text-[11px] text-[#6b665f]">Title Name</label>
             <Input
-              placeholder="Enter Menu Item Name"
+              placeholder="Enter Offer Name"
               value={form.title}
               onChange={(e) => setForm({ ...form, title: e.target.value })}
               className="h-10 rounded-[6px] border-[#ded9d1] bg-[#fafafa] px-3 text-[12px] placeholder:text-[#beb6ac]"
@@ -153,7 +173,7 @@ export function AddOfferModal({
 
           <div>
             <label className="mb-1.5 block text-[11px] text-[#6b665f]">Upload image</label>
-            <div className="flex h-[92px] items-center justify-center rounded-[6px] border border-dashed border-[#e3cfa8] bg-white text-[#8f867d]">
+            <div className="flex h-[92px] items-center justify-center overflow-hidden rounded-[6px] border border-dashed border-[#e3cfa8] bg-white text-[#8f867d]">
               <input
                 ref={fileInputRef}
                 type="file"
@@ -161,24 +181,31 @@ export function AddOfferModal({
                 onChange={(event) => void handleImageChange(event)}
                 className="hidden"
               />
-              <button
-                type="button"
-                className="flex items-center gap-3 text-[13px] text-[#7f7568]"
-                onClick={() => fileInputRef.current?.click()}
-              >
-                <span className="flex h-7 w-7  justify-center rounded-full border border-[#b7b0a6] text-[22px] leading-none">
-                  +
-                </span>
-                add
-              </button>
+              {form.imageUrl ? (
+                <button
+                  type="button"
+                  className="flex h-full w-full items-center justify-center p-2"
+                  onClick={() => fileInputRef.current?.click()}
+                >
+                  <img
+                    src={form.imageUrl}
+                    alt="Selected offer"
+                    className="h-full w-full rounded-[4px] object-contain"
+                  />
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  className="flex items-center gap-3 text-[13px] text-[#7f7568]"
+                  onClick={() => fileInputRef.current?.click()}
+                >
+                  <span className="flex h-7 w-7  justify-center rounded-full border border-[#b7b0a6] text-[22px] leading-none">
+                    +
+                  </span>
+                  add
+                </button>
+              )}
             </div>
-            {form.imageUrl ? (
-              <img
-                src={form.imageUrl}
-                alt="Selected offer"
-                className="mt-2 h-24 w-full rounded-[6px] border border-[#eadfce] object-cover"
-              />
-            ) : null}
           </div>
 
           <div className="grid gap-4 md:grid-cols-2">
@@ -189,7 +216,6 @@ export function AddOfferModal({
                 onChange={(e) => setForm({ ...form, discountType: e.target.value as OfferFormState["discountType"] })}
                 className="h-10 rounded-[6px] border-[#ded9d1] bg-[#fafafa] px-3 text-[12px]"
               >
-                <option value="PERCENT">Discount Type</option>
                 <option value="PERCENT">Percentage</option>
                 <option value="AMOUNT">Amount</option>
               </Select>
@@ -198,8 +224,10 @@ export function AddOfferModal({
               <label className="mb-1.5 block text-[11px] text-[#6b665f]">Discount %</label>
               <Input
                 type="number"
+                min={0}
+                step="1"
                 value={form.discountValue}
-                onChange={(e) => setForm({ ...form, discountValue: e.target.value })}
+                onChange={(e) => setForm({ ...form, discountValue: clampNonNegativeNumberInput(e.target.value) })}
                 className="h-10 rounded-[6px] border-[#ded9d1] bg-[#fafafa] px-3 text-[12px]"
                 required
               />
@@ -210,19 +238,23 @@ export function AddOfferModal({
             <div>
               <label className="mb-1.5 block text-[11px] text-[#6b665f]">Valid From *</label>
               <Input
-                type="datetime-local"
+                type="date"
                 value={form.validFrom}
                 onChange={(e) => setForm({ ...form, validFrom: e.target.value })}
+                min={todayDate}
                 className="h-10 rounded-[6px] border-[#ded9d1] bg-[#fafafa] px-3 text-[12px]"
+                required
               />
             </div>
             <div>
               <label className="mb-1.5 block text-[11px] text-[#6b665f]">Valid Until *</label>
               <Input
-                type="datetime-local"
+                type="date"
                 value={form.validUntil}
                 onChange={(e) => setForm({ ...form, validUntil: e.target.value })}
+                min={todayDate}
                 className="h-10 rounded-[6px] border-[#ded9d1] bg-[#fafafa] px-3 text-[12px]"
+                required
               />
             </div>
           </div>
@@ -231,8 +263,10 @@ export function AddOfferModal({
             <label className="mb-1.5 block text-[11px] text-[#6b665f]">Minimum Order Amount</label>
             <Input
               type="number"
+              min={0}
+              step="1"
               value={form.minimumOrderAmount}
-              onChange={(e) => setForm({ ...form, minimumOrderAmount: e.target.value })}
+              onChange={(e) => setForm({ ...form, minimumOrderAmount: clampNonNegativeNumberInput(e.target.value) })}
               className="h-10 rounded-[6px] border-[#ded9d1] bg-[#fafafa] px-3 text-[12px]"
             />
           </div>

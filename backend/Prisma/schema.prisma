@@ -78,6 +78,7 @@ model Offer {
   discountText String
   imageUrl     String?
   isActive     Boolean   @default(true)
+  validFrom    DateTime?
   validUntil   DateTime?
   createdAt    DateTime  @default(now())
   updatedAt    DateTime  @updatedAt

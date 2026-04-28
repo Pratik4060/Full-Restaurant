@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useAppDispatch, useAppSelector } from "../app/hooks";
 import { MetricCard } from "../components/dashboard/MetricCard";
+import { ConfirmDialog } from "../components/ui/ConfirmDialog";
 import { PageHeader } from "../components/layout/PageHeader";
 import { Input } from "../components/ui/Input";
 import { Pagination } from "../components/ui/Pagination";
@@ -38,10 +39,15 @@ const SortIcon = () => (
   </svg>
 );
 
+type DeleteRequest =
+  | { kind: "single"; id: string }
+  | { kind: "many"; ids: string[] };
+
 export function CustomersPage() {
   const dispatch = useAppDispatch();
   const { summary, rows, pagination, period, search, loading, deleting } = useAppSelector((state) => state.customers);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
+  const [deleteRequest, setDeleteRequest] = useState<DeleteRequest | null>(null);
 
   useEffect(() => {
     void dispatch(fetchCustomersSummaryThunk(period));
@@ -69,13 +75,7 @@ export function CustomersPage() {
     setSelectedIds((current) => (current.includes(id) ? current.filter((item) => item !== id) : [...current, id]));
   };
 
-  const handleDeleteSelected = async () => {
-    if (visibleSelectedIds.length === 0) return;
-    if (visibleSelectedIds.length === 1) {
-      await dispatch(deleteCustomerThunk(visibleSelectedIds[0]));
-    } else {
-      await dispatch(deleteCustomersThunk(visibleSelectedIds));
-    }
+  const refreshCustomers = async () => {
     await dispatch(fetchCustomersSummaryThunk(period));
     await dispatch(
       fetchCustomersTableThunk({
@@ -87,17 +87,24 @@ export function CustomersPage() {
     );
   };
 
-  const handleDeleteSingle = async (id: string) => {
-    await dispatch(deleteCustomerThunk(id));
-    await dispatch(fetchCustomersSummaryThunk(period));
-    await dispatch(
-      fetchCustomersTableThunk({
-        period,
-        search,
-        page: pagination.page,
-        limit: pagination.limit,
-      })
+  const handleDeleteRequest = async () => {
+    if (!deleteRequest) return;
+
+    if (deleteRequest.kind === "single") {
+      await dispatch(deleteCustomerThunk(deleteRequest.id));
+    } else if (deleteRequest.ids.length === 1) {
+      await dispatch(deleteCustomerThunk(deleteRequest.ids[0]));
+    } else {
+      await dispatch(deleteCustomersThunk(deleteRequest.ids));
+    }
+
+    setSelectedIds((current) =>
+      current.filter((id) =>
+        deleteRequest.kind === "single" ? id !== deleteRequest.id : !deleteRequest.ids.includes(id)
+      )
     );
+    setDeleteRequest(null);
+    await refreshCustomers();
   };
 
   const showingLabel = useMemo(() => {
@@ -169,7 +176,7 @@ export function CustomersPage() {
           <button
             type="button"
             disabled={selectedCount === 0 || deleting}
-            onClick={() => void handleDeleteSelected()}
+            onClick={() => setDeleteRequest({ kind: "many", ids: visibleSelectedIds })}
             className="inline-flex h-11 w-full items-center justify-center gap-2 rounded-[6px] border border-[#ff5858] px-5 text-[13px] font-medium text-[#ff4d4d] transition hover:bg-[#fff5f5] disabled:cursor-not-allowed disabled:opacity-50 md:w-auto"
           >
             <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
@@ -271,7 +278,7 @@ export function CustomersPage() {
                       <button
                         type="button"
                         className="inline-flex h-9 w-9 items-center justify-center rounded-[8px] bg-[#f5f7fa] text-[#ff4d6d] transition hover:bg-[#eef2f7]"
-                        onClick={() => void handleDeleteSingle(row.id)}
+                        onClick={() => setDeleteRequest({ kind: "single", id: row.id })}
                         aria-label="Delete customer"
                       >
                         <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
@@ -309,6 +316,21 @@ export function CustomersPage() {
           </div>
         </div>
       </section>
+
+      <ConfirmDialog
+        open={deleteRequest !== null}
+        title="Delete Customers"
+        message={
+          deleteRequest?.kind === "single"
+            ? "Are you sure you want to delete this customer?"
+            : `Are you sure you want to delete ${deleteRequest?.ids.length ?? 0} selected customers?`
+        }
+        confirmLabel="Yes, Delete"
+        cancelLabel="No"
+        onCancel={() => setDeleteRequest(null)}
+        onConfirm={handleDeleteRequest}
+        pending={deleting}
+      />
     </div>
   );
 }

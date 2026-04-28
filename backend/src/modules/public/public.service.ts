@@ -278,6 +278,7 @@ export const registerPublicCustomer = async (payload: {
     customerName: payload.customerName,
     ...(payload.customerPhone !== undefined ? { customerPhone: payload.customerPhone } : {}),
   });
+
   broadcastInvalidation(["customers", "dashboard"]);
   return customer;
 };

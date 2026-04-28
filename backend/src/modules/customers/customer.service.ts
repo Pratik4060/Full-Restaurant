@@ -36,6 +36,12 @@ const buildSearchFilter = (search?: string): Prisma.CustomerWhereInput | undefin
   };
 };
 
+const customersWithOrdersFilter: Prisma.CustomerWhereInput = {
+  orders: {
+    some: {},
+  },
+};
+
 type CustomerWithOrders = Prisma.CustomerGetPayload<{
   include: {
     orders: {
@@ -55,8 +61,15 @@ export const getCustomerCards = async (period?: string | undefined) => {
   const selectedPeriod = getPeriod(period);
   const startDate = getPeriodStartDate(selectedPeriod);
 
-  const [totalCustomers, totalOrders, revenueAggregate, completedOrdersCount] = await Promise.all([
-    prisma.customer.count(),
+  const [uniqueCustomers, totalOrders, revenueAggregate, completedOrdersCount] = await Promise.all([
+    prisma.order.groupBy({
+      by: ["customerId"],
+      where: {
+        customerId: {
+          not: null,
+        },
+      },
+    }),
     prisma.order.count({
       where: {
         createdAt: {
@@ -90,7 +103,7 @@ export const getCustomerCards = async (period?: string | undefined) => {
   return {
     period: selectedPeriod,
     cards: {
-      totalCustomers,
+      totalCustomers: uniqueCustomers.length,
       totalOrders,
       totalRevenue,
       averageOrderValue: completedOrdersCount > 0 ? Number((totalRevenue / completedOrdersCount).toFixed(2)) : 0,
@@ -112,65 +125,114 @@ export const getCustomersTable = async (params: {
 
   const where = buildSearchFilter(params.search);
 
-  const customerFindArgs: Prisma.CustomerFindManyArgs = {
+  const orders = await prisma.order.findMany({
+    where: {
+      createdAt: {
+        gte: startDate,
+      },
+      ...(where
+        ? {
+            OR: [
+              {
+                customerName: {
+                  contains: params.search ?? "",
+                  mode: "insensitive" as const,
+                },
+              },
+              {
+                customer: {
+                  phone: {
+                    contains: params.search ?? "",
+                    mode: "insensitive" as const,
+                  },
+                },
+              },
+            ],
+          }
+        : {}),
+    },
     orderBy: {
       createdAt: "desc",
     },
-    skip,
-    take: limit,
     include: {
-      orders: {
-        where: {
-          createdAt: {
-            gte: startDate,
-          },
-        },
-        orderBy: {
-          createdAt: "desc",
-        },
+      customer: {
         select: {
           id: true,
-          tableNumber: true,
-          guestCount: true,
-          totalAmount: true,
-          status: true,
-          createdAt: true,
+          name: true,
+          phone: true,
         },
       },
     },
-  };
+  });
 
-  const customerCountArgs: Prisma.CustomerCountArgs = {};
+  const grouped = new Map<
+    string,
+    {
+      id: string;
+      customerName: string;
+      contactNumber: string | null;
+      numberOfGuest: number;
+      tableNumber: string | null;
+      numberOfOrders: number;
+      totalSpent: number;
+      lastVisit: Date | null;
+    }
+  >();
 
-  if (where) {
-    customerFindArgs.where = where;
-    customerCountArgs.where = where;
+  for (
+    const order of orders as Array<{
+      id: string;
+      customerId: string | null;
+      customerName: string;
+      tableNumber: string;
+      guestCount: number;
+      totalAmount: unknown;
+      status: OrderStatus;
+      createdAt: Date;
+      customer: { id: string; name: string; phone: string | null } | null;
+    }>
+  ) {
+    const id = order.customer?.id ?? order.customerId ?? order.id;
+    const existing = grouped.get(id);
+    const totalSpent = order.status === OrderStatus.COMPLETED ? numberValue(order.totalAmount) : 0;
+
+    if (!existing) {
+      grouped.set(id, {
+        id,
+        customerName: order.customer?.name ?? order.customerName,
+        contactNumber: order.customer?.phone ?? null,
+        numberOfGuest: order.guestCount,
+        tableNumber: order.tableNumber,
+        numberOfOrders: 1,
+        totalSpent,
+        lastVisit: order.createdAt,
+      });
+      continue;
+    }
+
+    existing.numberOfOrders += 1;
+    existing.totalSpent += totalSpent;
+    if (order.createdAt > (existing.lastVisit ?? new Date(0))) {
+      existing.lastVisit = order.createdAt;
+      existing.numberOfGuest = order.guestCount;
+      existing.tableNumber = order.tableNumber;
+    }
   }
 
-  const [customers, total] = await Promise.all([
-    prisma.customer.findMany(customerFindArgs) as Promise<CustomerWithOrders[]>,
-    prisma.customer.count(customerCountArgs),
-  ]);
-
-  const rows = customers.map((customer) => {
-    const lastOrder = customer.orders[0] ?? null;
-    const completedOrders = customer.orders.filter((order) => order.status === OrderStatus.COMPLETED);
-    const totalSpent = completedOrders.reduce(
-      (sum: number, order: (typeof completedOrders)[number]) => sum + numberValue(order.totalAmount),
-      0
-    );
-
-    return {
-      id: customer.id,
-      customerName: customer.name,
-      contactNumber: customer.phone,
-      numberOfGuest: lastOrder?.guestCount ?? 0,
-      tableNumber: lastOrder?.tableNumber ?? null,
-      numberOfOrders: customer.orders.length,
-      totalSpent,
-      lastVisit: lastOrder?.createdAt ?? null,
-    };
-  });
+  const groupedRows = [...grouped.values()].sort(
+    (a, b) => (b.lastVisit?.getTime() ?? 0) - (a.lastVisit?.getTime() ?? 0)
+  );
+  const total = groupedRows.length;
+  const rows = groupedRows.slice(skip, skip + limit).map((row) => ({
+    id: row.id,
+    customerName: row.customerName,
+    contactNumber: row.contactNumber,
+    numberOfGuest: row.numberOfGuest,
+    tableNumber: row.tableNumber,
+    numberOfOrders: row.numberOfOrders,
+    totalSpent: row.totalSpent,
+    lastVisit: row.lastVisit,
+  }));
 
   return {
     period: selectedPeriod,

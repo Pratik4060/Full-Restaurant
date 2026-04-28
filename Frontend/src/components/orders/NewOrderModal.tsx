@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState, type FormEvent } from "react";
+import { useEffect, useMemo, useRef, useState, type FormEvent } from "react";
 import { useAppDispatch, useAppSelector } from "../../app/hooks";
 import { createOrderThunk } from "../../features/orders/ordersSlice";
 import type { MenuItem } from "../../types/api";
@@ -22,11 +22,13 @@ const newDraft = (): OrderItemDraft => ({
   open: false,
 });
 
-const formatCurrency = (value: number) => `₹${new Intl.NumberFormat("en-IN", { maximumFractionDigits: 0 }).format(value)}`;
+const formatCurrency = (value: number) =>
+  `₹${new Intl.NumberFormat("en-IN", { maximumFractionDigits: 0 }).format(value)}`;
 
 export function NewOrderModal({ open, onClose }: { open: boolean; onClose: () => void }) {
   const dispatch = useAppDispatch();
   const menuItems = useAppSelector((s) => s.menu.list);
+  const draftRefs = useRef<Record<string, HTMLDivElement | null>>({});
 
   const [customerName, setCustomerName] = useState("");
   const [tableNumber, setTableNumber] = useState("");
@@ -39,19 +41,44 @@ export function NewOrderModal({ open, onClose }: { open: boolean; onClose: () =>
     setDrafts([newDraft()]);
   }, [open]);
 
+  useEffect(() => {
+    const handlePointerDown = (event: MouseEvent | TouchEvent) => {
+      const target = event.target;
+      if (!(target instanceof Node)) return;
+
+      setDrafts((current) =>
+        current.map((draft) => {
+          if (!draft.open) return draft;
+          const wrapper = draftRefs.current[draft.id];
+          if (wrapper && wrapper.contains(target)) return draft;
+          return { ...draft, open: false };
+        }),
+      );
+    };
+
+    document.addEventListener("mousedown", handlePointerDown);
+    document.addEventListener("touchstart", handlePointerDown);
+
+    return () => {
+      document.removeEventListener("mousedown", handlePointerDown);
+      document.removeEventListener("touchstart", handlePointerDown);
+    };
+  }, []);
+
   const resolvedDrafts = useMemo(
     () =>
       drafts.map((draft) => {
         const filteredItems = draft.query.trim()
-          ? menuItems.filter((item) =>
-              item.name.toLowerCase().includes(draft.query.toLowerCase()) ||
-              item.category.toLowerCase().includes(draft.query.toLowerCase())
+          ? menuItems.filter(
+              (item) =>
+                item.name.toLowerCase().includes(draft.query.toLowerCase()) ||
+                item.category.toLowerCase().includes(draft.query.toLowerCase()),
             )
           : menuItems.slice(0, 6);
         const matchedItem = menuItems.find((item) => item.id === draft.menuItemId) ?? null;
         return { ...draft, filteredItems, matchedItem };
       }),
-    [drafts, menuItems]
+    [drafts, menuItems],
   );
 
   const updateDraft = (id: string, patch: Partial<OrderItemDraft>) => {
@@ -78,7 +105,7 @@ export function NewOrderModal({ open, onClose }: { open: boolean; onClose: () =>
         tableNumber,
         guestCount: 1,
         items,
-      })
+      }),
     );
 
     onClose();
@@ -124,7 +151,13 @@ export function NewOrderModal({ open, onClose }: { open: boolean; onClose: () =>
         <div className="space-y-5">
           {resolvedDrafts.map((draft, index) => {
             return (
-              <div key={draft.id} className="grid gap-4 md:grid-cols-[minmax(0,1fr)_96px_auto] md:items-end">
+              <div
+                key={draft.id}
+                ref={(node) => {
+                  draftRefs.current[draft.id] = node;
+                }}
+                className="grid gap-4 md:grid-cols-[minmax(0,1fr)_96px_auto] md:items-end"
+              >
                 <div className="relative min-w-0">
                   <label className="mb-2 block text-[12px] font-medium text-[#2d2721]">Order Items</label>
                   <Input
@@ -165,7 +198,6 @@ export function NewOrderModal({ open, onClose }: { open: boolean; onClose: () =>
                       ) : null}
                     </div>
                   ) : null}
-
                 </div>
 
                 <div className="md:w-[96px]">
@@ -179,14 +211,18 @@ export function NewOrderModal({ open, onClose }: { open: boolean; onClose: () =>
                   />
                 </div>
 
-                <button
-                  type="button"
-                  onClick={() => removeDraft(draft.id)}
-                  className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-[#ffb1b1] text-[18px] leading-none text-[#ff4f4f] transition hover:bg-[#fff5f5] md:mb-[1px]"
-                  aria-label={`Remove item ${index + 1}`}
-                >
-                  ×
-                </button>
+                {index > 0 ? (
+                  <button
+                    type="button"
+                    onClick={() => removeDraft(draft.id)}
+                    className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-[#ffb1b1] text-[18px] leading-none text-[#ff4f4f] transition hover:bg-[#fff5f5] md:mb-[1px]"
+                    aria-label={`Remove item ${index + 1}`}
+                  >
+                    ×
+                  </button>
+                ) : (
+                  <div className="hidden h-9 w-9 md:block" aria-hidden="true" />
+                )}
               </div>
             );
           })}

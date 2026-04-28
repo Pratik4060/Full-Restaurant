@@ -43,16 +43,13 @@ export function Topbar({ onMenuOpen }: { onMenuOpen: () => void }) {
             {initials}
           </div>
 
+
           <button
             onClick={() => dispatch(logout())}
             className="flex h-9 w-9 items-center justify-center rounded-full text-[#ff5a5a] transition hover:bg-[#fff5f5]"
             aria-label="Logout"
           >
-            <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M10 17l5-5-5-5" />
-              <path d="M15 12H3" />
-              <path d="M21 3v18" />
-            </svg>
+            <img src="/assets/logout.svg"/>
           </button>
         </div>
       </div>

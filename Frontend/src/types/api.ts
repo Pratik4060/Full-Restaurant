@@ -65,6 +65,7 @@ export interface Offer {
   discountText: string;
   imageUrl: string | null;
   isActive: boolean;
+  validFrom: string | null;
   validUntil: string | null;
   createdAt: string;
   updatedAt: string;
