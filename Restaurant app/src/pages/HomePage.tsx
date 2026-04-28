@@ -98,6 +98,8 @@ const HomePage: React.FC<HomePageProps> = ({
   const publicBreakfastItems = useMemo(() => mapPublicBreakfastItems(menuItems), [menuItems]);
   const publicLunchItems = useMemo(() => mapPublicLunchItems(menuItems, "Lunch"), [menuItems]);
   const mergedOffers = useMemo(() => mapOffersToHomeOffers(offers, OFFERS), [offers]);
+  const activeOfferIndex = mergedOffers.length > 0 ? currentOffer % mergedOffers.length : 0;
+  const activeOffer = mergedOffers[activeOfferIndex] ?? OFFERS[activeOfferIndex % OFFERS.length];
 
   const allSearchItems = useMemo<HomeSearchItem[]>(
     () => [
@@ -145,9 +147,18 @@ const HomePage: React.FC<HomePageProps> = ({
   }, []);
 
   useEffect(() => {
-    const timer = setInterval(() => setCurrentOffer((prev) => (prev + 1) % OFFERS.length), 4000);
+    const offerCount = mergedOffers.length || OFFERS.length;
+    const timer = setInterval(
+      () => setCurrentOffer((prev) => (prev + 1) % offerCount),
+      4000,
+    );
     return () => clearInterval(timer);
-  }, []);
+  }, [mergedOffers.length]);
+
+  useEffect(() => {
+    if (mergedOffers.length === 0) return;
+    setCurrentOffer((prev) => prev % mergedOffers.length);
+  }, [mergedOffers.length]);
 
   useEffect(() => {
     const timer = setInterval(() => setCurrentMealIdx((prev) => (prev + 1) % activeMealData.length), 5000);
@@ -155,8 +166,7 @@ const HomePage: React.FC<HomePageProps> = ({
   }, [activeMealData.length]);
 
   const handleOfferOrderNow = () => {
-    const offerTitle = OFFERS[currentOffer].title;
-    const selectedOfferTitle = mergedOffers[currentOffer]?.title ?? offerTitle;
+    const selectedOfferTitle = activeOffer.title;
     if (selectedOfferTitle === 'Flat Discount') return onOfferSelect({ category: currentMeal.category, focus: 'all' });
     if (selectedOfferTitle === 'Combo Offer') return onOfferSelect({ category: 'Breakfast', focus: 'all' });
     if (selectedOfferTitle === 'Quick Bite Deal') return onOfferSelect({ category: 'Breakfast', focus: 'quick-bites' });

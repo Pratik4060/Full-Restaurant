@@ -22,9 +22,23 @@ const HomeOfferCarousel: React.FC<HomeOfferCarouselProps> = ({
   onOrderNow,
   children,
 }) => {
+  const safeOffers =
+    offers.length > 0
+      ? offers
+      : [
+          {
+            title: "Flat Discount",
+            desc: "Explore our latest offers.",
+            img: "",
+            gradient: "linear-gradient(117.14deg, #785641 5.65%, #5F0404 96.69%)",
+          },
+        ];
+  const activeOfferIndex = currentOffer % safeOffers.length;
+  const activeOffer = safeOffers[activeOfferIndex];
+
   return (
     <motion.div
-      animate={{ background: offers[currentOffer].gradient }}
+      animate={{ background: activeOffer.gradient }}
       transition={{ duration: 0.8, ease: "linear" }}
       className="px-6 pb-6 pt-6 text-white"
     >
@@ -45,7 +59,7 @@ const HomeOfferCarousel: React.FC<HomeOfferCarouselProps> = ({
 
           <div className="relative h-[200px] md:h-[260px] lg:h-[300px]">        <AnimatePresence mode="wait">
           <motion.div
-            key={currentOffer}
+            key={activeOfferIndex}
             initial={{ x: 40, opacity: 0 }}
             animate={{ x: 0, opacity: 1 }}
             exit={{ x: -40, opacity: 0 }}
@@ -54,10 +68,10 @@ const HomeOfferCarousel: React.FC<HomeOfferCarouselProps> = ({
           >
             <div className="flex-1 pr-4">
               <p className="playfair mb-2 text-[1.45rem] font-bold tracking-tight">
-                {offers[currentOffer].title}
+                {activeOffer.title}
               </p>
               <p className="max-w-[240px] text-sm leading-relaxed text-white/90">
-                {offers[currentOffer].desc}
+                {activeOffer.desc}
               </p>
               <button
                 type="button"
@@ -74,7 +88,7 @@ const HomeOfferCarousel: React.FC<HomeOfferCarouselProps> = ({
             </div>
 
 <div className="flex h-[120px] w-[120px] md:h-[160px] md:w-[160px]">              <img
-                src={offers[currentOffer].img}
+                src={activeOffer.img}
                 className="h-full w-full object-contain drop-shadow-2xl"
                 alt="food"
               />
@@ -84,13 +98,13 @@ const HomeOfferCarousel: React.FC<HomeOfferCarouselProps> = ({
       </div>
 
       <div className="mt-6 flex items-center justify-center gap-2">
-        {offers.map((_, index) => (
+        {safeOffers.map((_, index) => (
           <button
             key={index}
             type="button"
             onClick={() => onOfferChange(index)}
             className={`h-2 w-2 rounded-full transition-colors ${
-              index === currentOffer ? "bg-[#ffb100]" : "bg-white/50"
+              index === activeOfferIndex ? "bg-[#ffb100]" : "bg-white/50"
             }`}
             aria-label={`Go to slide ${index + 1}`}
           />
