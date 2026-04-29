@@ -93,12 +93,12 @@ export function OrderCard({ order }: { order: Order }) {
         <p>Updated: {formatDateTime(order.updatedAt)}</p>
       </div>
 
-      <div className="mt-auto flex gap-4 pt-5">
+      <div className="mt-auto flex flex-col gap-3 pt-5 sm:flex-row sm:gap-4">
         {primaryNext && (
           <Button
             onClick={() => void dispatch(updateOrderStatusThunk({ id: order.id, status: primaryNext }))}
             style={primaryActionInlineStyle[order.status]}
-            className={`h-10 flex-1 rounded-md border text-[13px] font-medium shadow-none ${primaryClassName}`}
+            className={`h-10 w-full whitespace-nowrap rounded-md border text-[12px] font-medium leading-tight shadow-none sm:min-w-[190px] sm:flex-[1.35] sm:px-6 sm:text-[13px] md:min-w-[220px] ${primaryClassName}`}
           >
             {primaryLabel}
           </Button>
@@ -108,7 +108,7 @@ export function OrderCard({ order }: { order: Order }) {
             variant="danger"
             onClick={() => void dispatch(updateOrderStatusThunk({ id: order.id, status: "CANCELED" }))}
             style={cancelInlineStyle}
-            className="h-10 min-w-[112px] rounded-md border border-[#ffb6b6] bg-white text-[13px] font-medium text-[#ff5656] shadow-none hover:bg-[#fff5f5]"
+            className="h-10 w-full whitespace-nowrap rounded-md border border-[#ffb6b6] bg-white text-[12px] font-medium leading-tight text-[#ff5656] shadow-none hover:bg-[#fff5f5] sm:min-w-[140px] sm:text-[13px]"
           >
             Cancel
           </Button>

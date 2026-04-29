@@ -472,9 +472,9 @@ export function DashboardPage() {
       ) : null}
 
       <section className="rounded-[18px] border border-[#ddd7cf] bg-white p-5 shadow-[0_8px_28px_rgba(44,33,18,0.05)]">
-        <div className="mb-6 flex items-center justify-between">
+        <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <p className="text-[13px] font-semibold text-[#1f1f1f]">Popular Items</p>
-          <div className="flex items-center gap-4 text-[13px] text-[#1f1f1f]">
+          <div className="flex flex-wrap items-center gap-2 text-[12px] text-[#1f1f1f] sm:gap-4 sm:text-[13px]">
             {(Object.keys(popularGroupLabels) as PopularGroup[]).map((group) => {
               const active = popularGroup === group;
               return (
@@ -482,14 +482,14 @@ export function DashboardPage() {
                   key={group}
                   type="button"
                   onClick={() => setPopularGroup(group)}
-                  className="inline-flex items-center gap-3 transition"
+                  className="inline-flex items-center gap-2 whitespace-nowrap transition sm:gap-3"
                 >
                   <span
-                    className="flex h-7 w-7 items-center justify-center rounded-full border"
+                    className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full border sm:h-7 sm:w-7"
                     style={{ borderColor: active ? popularGroupColors[group] : "#bdb7af" }}
                   >
                     <span
-                      className="h-3.5 w-3.5 rounded-full"
+                      className="block h-3 w-3 rounded-full sm:h-3.5 sm:w-3.5"
                       style={{ backgroundColor: active ? popularGroupColors[group] : "transparent" }}
                     />
                   </span>
@@ -497,17 +497,6 @@ export function DashboardPage() {
                 </button>
               );
             })}
-            <button
-              type="button"
-              className="ml-1 inline-flex h-8 w-8 items-center justify-center rounded-full border border-transparent text-[#27221c] transition hover:border-[#ddd4c6] hover:bg-[#faf7f1]"
-              aria-label="Download popular items chart"
-            >
-              <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M12 3v11" />
-                <path d="m8 10 4 4 4-4" />
-                <path d="M4 17v2a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-2" />
-              </svg>
-            </button>
           </div>
         </div>
 

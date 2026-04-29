@@ -87,7 +87,7 @@ export function OffersPage() {
           <p className="mb-6 text-[20px] font-semibold text-[#22201c]">Inactive Offers ({inactiveOffers.length})</p>
           <div className="grid grid-cols-1 justify-items-center gap-5 sm:grid-cols-2 sm:justify-items-start xl:grid-cols-3">
             {inactiveOffers.map((offer) => (
-              <div key={offer.id} className="w-full max-w-[280px] sm:max-w-none">
+              <div key={offer.id} className="w-full max-w-[300px] sm:max-w-none">
                 <OfferCard offer={offer} onEdit={setEditingOffer} />
               </div>
             ))}

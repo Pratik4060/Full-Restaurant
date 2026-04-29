@@ -125,14 +125,14 @@ export function MenuItemsPage() {
           <button
             type="button"
             onClick={() => dispatch(setDietFilter(dietFilter === "VEG" ? "ALL" : "VEG"))}
-            className="inline-flex items-center gap-3 text-[15px] text-[#1f1f1f]"
+            className="inline-flex items-center gap-2 whitespace-nowrap text-[13px] leading-none text-[#1f1f1f] md:gap-3 md:text-[15px]"
           >
             <span
-              className="flex h-8 w-8 items-center justify-center rounded-full border"
+              className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full border md:h-8 md:w-8"
               style={{ borderColor: dietFilter === "VEG" ? "#35b935" : "#b9b2aa" }}
             >
               <span
-                className="h-4 w-4 rounded-full"
+                className="block h-3.5 w-3.5 rounded-full md:h-4 md:w-4"
                 style={{ backgroundColor: dietFilter === "VEG" ? "#35b935" : "transparent" }}
               />
             </span>
@@ -142,14 +142,14 @@ export function MenuItemsPage() {
           <button
             type="button"
             onClick={() => dispatch(setDietFilter(dietFilter === "NON_VEG" ? "ALL" : "NON_VEG"))}
-            className="inline-flex items-center gap-3 text-[15px] text-[#1f1f1f]"
+            className="inline-flex items-center gap-2 whitespace-nowrap text-[13px] leading-none text-[#1f1f1f] md:gap-3 md:text-[15px]"
           >
             <span
-              className="flex h-8 w-8 items-center justify-center rounded-full border"
+              className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full border md:h-8 md:w-8"
               style={{ borderColor: dietFilter === "NON_VEG" ? "#35b935" : "#b9b2aa" }}
             >
               <span
-                className="h-4 w-4 rounded-full"
+                className="block h-3.5 w-3.5 rounded-full md:h-4 md:w-4"
                 style={{ backgroundColor: dietFilter === "NON_VEG" ? "#35b935" : "transparent" }}
               />
             </span>
