@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState, type ChangeEvent, type FormEvent } from "react";
 import { useAppDispatch, useAppSelector } from "../../app/hooks";
-import { createOfferThunk, fetchOffersThunk, updateOfferThunk } from "../../features/offers/offersSlice";
+import { createOfferThunk, updateOfferThunk } from "../../features/offers/offersSlice";
 import type { Offer } from "../../types/api";
 import { Button } from "../ui/Button";
 import { Input } from "../ui/Input";
@@ -38,6 +38,28 @@ const readFileAsDataUrl = (file: File) =>
     reader.onerror = () => reject(new Error("Unable to read the selected image"));
     reader.readAsDataURL(file);
   });
+
+const compressImage = async (file: File, maxWidth = 1200, maxHeight = 1200, quality = 0.8) => {
+  const dataUrl = await readFileAsDataUrl(file);
+  const img = await new Promise<HTMLImageElement>((resolve, reject) => {
+    const image = new Image();
+    image.onload = () => resolve(image);
+    image.onerror = () => reject(new Error("Unable to process the selected image"));
+    image.src = dataUrl;
+  });
+
+  const scale = Math.min(1, maxWidth / img.width, maxHeight / img.height);
+  if (scale >= 1) return dataUrl;
+
+  const canvas = document.createElement("canvas");
+  canvas.width = Math.max(1, Math.round(img.width * scale));
+  canvas.height = Math.max(1, Math.round(img.height * scale));
+
+  const ctx = canvas.getContext("2d");
+  if (!ctx) return dataUrl;
+  ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+  return canvas.toDataURL("image/jpeg", quality);
+};
 
 const dateInputToIso = (value: string) => new Date(`${value}T12:00:00`).toISOString();
 const clampNonNegativeNumberInput = (value: string) => {
@@ -131,7 +153,6 @@ export function AddOfferModal({
       } else {
         await dispatch(createOfferThunk(payload)).unwrap();
       }
-      await dispatch(fetchOffersThunk()).unwrap();
       onClose();
     } catch (error) {
       setSubmitError((error as Error).message || "Unable to save offer");
@@ -143,7 +164,7 @@ export function AddOfferModal({
     if (!file) return;
 
     try {
-      const dataUrl = await readFileAsDataUrl(file);
+      const dataUrl = await compressImage(file);
       setForm((current) => ({ ...current, imageUrl: dataUrl }));
     } catch {
       setForm((current) => ({ ...current, imageUrl: "" }));

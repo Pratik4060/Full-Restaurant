@@ -54,6 +54,28 @@ const readFileAsDataUrl = (file: File) =>
     reader.readAsDataURL(file);
   });
 
+const compressImage = async (file: File, maxWidth = 1200, maxHeight = 1200, quality = 0.8) => {
+  const dataUrl = await readFileAsDataUrl(file);
+  const img = await new Promise<HTMLImageElement>((resolve, reject) => {
+    const image = new Image();
+    image.onload = () => resolve(image);
+    image.onerror = () => reject(new Error("Unable to process the selected image"));
+    image.src = dataUrl;
+  });
+
+  const scale = Math.min(1, maxWidth / img.width, maxHeight / img.height);
+  if (scale >= 1) return dataUrl;
+
+  const canvas = document.createElement("canvas");
+  canvas.width = Math.max(1, Math.round(img.width * scale));
+  canvas.height = Math.max(1, Math.round(img.height * scale));
+
+  const ctx = canvas.getContext("2d");
+  if (!ctx) return dataUrl;
+  ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+  return canvas.toDataURL("image/jpeg", quality);
+};
+
 export function AddMenuItemModal({
   open,
   onClose,
@@ -134,7 +156,7 @@ export function AddMenuItemModal({
     if (!file) return;
 
     try {
-      const dataUrl = await readFileAsDataUrl(file);
+      const dataUrl = await compressImage(file);
       setForm((current) => ({ ...current, imageUrl: dataUrl }));
     } catch {
       setForm((current) => ({ ...current, imageUrl: "" }));
