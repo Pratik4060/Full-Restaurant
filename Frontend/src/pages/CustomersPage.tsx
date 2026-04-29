@@ -6,6 +6,7 @@ import { PageHeader } from "../components/layout/PageHeader";
 import { Input } from "../components/ui/Input";
 import { Pagination } from "../components/ui/Pagination";
 import { Select } from "../components/ui/Select";
+import deletebtn from "../../public/assets/delete.svg"
 import {
   deleteCustomerThunk,
   deleteCustomersThunk,
@@ -32,12 +33,6 @@ const formatRelative = (value: string | null) => {
   return `${diffDays} day${diffDays === 1 ? "" : "s"} ago`;
 };
 
-const SortIcon = () => (
-  <svg viewBox="0 0 24 24" className="h-4 w-4 shrink-0 text-[#111111]" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-    <path d="m8 8 4-4 4 4" />
-    <path d="m16 16-4 4-4-4" />
-  </svg>
-);
 
 type DeleteRequest =
   | { kind: "single"; id: string }
@@ -179,13 +174,8 @@ export function CustomersPage() {
             onClick={() => setDeleteRequest({ kind: "many", ids: visibleSelectedIds })}
             className="inline-flex h-11 w-full items-center justify-center gap-2 rounded-[6px] border border-[#ff5858] px-5 text-[13px] font-medium text-[#ff4d4d] transition hover:bg-[#fff5f5] disabled:cursor-not-allowed disabled:opacity-50 md:w-auto"
           >
-            <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M3 6h18" />
-              <path d="M8 6V4h8v2" />
-              <path d="M19 6l-1 13H6L5 6" />
-              <path d="M10 11v5" />
-              <path d="M14 11v5" />
-            </svg>
+            <img src={deletebtn}  alt="delete"/>
+
             Delete
           </button>
         </div>
@@ -206,43 +196,36 @@ export function CustomersPage() {
                   <th className="border-b border-r border-[#d6dce3] px-4 py-4">
                     <div className="flex items-center justify-between gap-2">
                       <span>Customer Name</span>
-                      <SortIcon />
                     </div>
                   </th>
                   <th className="border-b border-r border-[#d6dce3] px-4 py-4">
                     <div className="flex items-center justify-between gap-2">
                       <span>Contact</span>
-                      <SortIcon />
                     </div>
                   </th>
                   <th className="border-b border-r border-[#d6dce3] px-4 py-4">
                     <div className="flex items-center justify-between gap-2">
                       <span>Number of Guests</span>
-                      <SortIcon />
                     </div>
                   </th>
                   <th className="border-b border-r border-[#d6dce3] px-4 py-4">
                     <div className="flex items-center justify-between gap-2">
                       <span>Table Number</span>
-                      <SortIcon />
                     </div>
                   </th>
                   <th className="border-b border-r border-[#d6dce3] px-4 py-4">
                     <div className="flex items-center justify-between gap-2">
                       <span>Number of Orders</span>
-                      <SortIcon />
                     </div>
                   </th>
                   <th className="border-b border-r border-[#d6dce3] px-4 py-4">
                     <div className="flex items-center justify-between gap-2">
                       <span>Total Spent</span>
-                      <SortIcon />
                     </div>
                   </th>
                   <th className="border-b border-r border-[#d6dce3] px-4 py-4">
                     <div className="flex items-center justify-between gap-2">
                       <span>Last Visit</span>
-                      <SortIcon />
                     </div>
                   </th>
                   <th className="border-b border-[#d6dce3] px-4 py-4 text-center">Actions</th>
@@ -281,13 +264,8 @@ export function CustomersPage() {
                         onClick={() => setDeleteRequest({ kind: "single", id: row.id })}
                         aria-label="Delete customer"
                       >
-                        <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-                          <path d="M3 6h18" />
-                          <path d="M8 6V4h8v2" />
-                          <path d="M19 6l-1 13H6L5 6" />
-                          <path d="M10 11v5" />
-                          <path d="M14 11v5" />
-                        </svg>
+                         <img src={deletebtn}  alt="delete"/>
+
                       </button>
                     </td>
                   </tr>

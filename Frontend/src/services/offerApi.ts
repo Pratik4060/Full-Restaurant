@@ -5,7 +5,7 @@ export interface CreateOfferPayload {
   title: string;
   description: string;
   discountText: string;
-  imageUrl?: string;
+  imageUrl: string;
   isActive?: boolean;
   validUntil?: string;
 }

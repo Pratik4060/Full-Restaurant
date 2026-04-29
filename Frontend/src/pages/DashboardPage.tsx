@@ -7,9 +7,6 @@ import { Select } from "../components/ui/Select";
 import { fetchDashboardThunk, setRevenuePeriod } from "../features/dashboard/dashboardSlice";
 import type { OrderStatusPoint, RevenuePeriod, RevenuePoint } from "../types/api";
 
-const fallbackOfferImage =
-  "https://images.unsplash.com/photo-1552566626-52f8b828add9?w=1200&auto=format&fit=crop&q=80";
-
 const statusColors: Record<OrderStatusPoint["status"], string> = {
   PENDING: "#f8a095",
   PREPARING: "#8dbef2",
@@ -454,16 +451,11 @@ export function DashboardPage() {
               <div key={offer.id} className="overflow-hidden rounded-lg border border-[#eadfce] bg-white">
                 <div className="h-24 overflow-hidden bg-[#f4ecdf]">
                   {offer.imageUrl ? (
-                    <img
-                      src={offer.imageUrl}
-                      alt={offer.title}
-                      className="h-full w-full object-cover"
-                      onError={(event) => {
-                        event.currentTarget.src = fallbackOfferImage;
-                      }}
-                    />
+                    <img src={offer.imageUrl} alt={offer.title} className="h-full w-full object-cover" />
                   ) : (
-                    <img src={fallbackOfferImage} alt={offer.title} className="h-full w-full object-cover" />
+                    <div className="flex h-full w-full items-center justify-center bg-[#f5f1ea] text-[11px] text-[#8b8175]">
+                      Image required
+                    </div>
                   )}
                 </div>
                 <div className="p-2.5">

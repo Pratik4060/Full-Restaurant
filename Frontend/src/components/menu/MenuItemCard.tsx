@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useAppDispatch } from "../../app/hooks";
 import {
   fetchMenuItemsThunk,
@@ -12,21 +12,14 @@ import { Switch } from "../ui/Switch";
 import { ConfirmDialog } from "../ui/ConfirmDialog";
 import deletebtn  from  "../../../public/assets/delete.svg"
 import editbtn from "../../../public/assets/edit.svg"
-const fallbackImage =
-  "https://images.unsplash.com/photo-1547592180-85f173990554?w=1200&auto=format&fit=crop&q=80";
 
 export function MenuItemCard({ item, onEdit }: { item: MenuItem; onEdit: (item: MenuItem) => void }) {
   const dispatch = useAppDispatch();
   const mealTypeLabel = item.type === "BREAKFAST" ? "Breakfast" : item.type === "LUNCH" ? "Lunch" : "Dinner";
   const priceValue = `₹${new Intl.NumberFormat("en-IN", { maximumFractionDigits: 0 }).format(item.price)}`;
-  const [imageSrc, setImageSrc] = useState(item.imageUrl || fallbackImage);
   const [deleteError, setDeleteError] = useState<string | null>(null);
   const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false);
   const [deleting, setDeleting] = useState(false);
-
-  useEffect(() => {
-    setImageSrc(item.imageUrl || fallbackImage);
-  }, [item.imageUrl]);
 
   const handleDelete = async () => {
     setDeleteError(null);
@@ -47,12 +40,13 @@ export function MenuItemCard({ item, onEdit }: { item: MenuItem; onEdit: (item: 
 
   return (
     <div className="flex h-full min-h-[430px] flex-col overflow-hidden rounded-[12px] border border-[#e2ddd4] bg-white shadow-[0_6px_18px_rgba(44,33,18,0.06)]">
-      <img
-        src={imageSrc}
-        alt={item.name}
-        className="h-[168px] w-full object-cover"
-        onError={() => setImageSrc(fallbackImage)}
-      />
+      {item.imageUrl ? (
+        <img src={item.imageUrl} alt={item.name} className="h-[168px] w-full object-cover" />
+      ) : (
+        <div className="flex h-[168px] w-full items-center justify-center bg-[#f5f1ea] text-[12px] text-[#8b8175]">
+          Image required
+        </div>
+      )}
       <div className="flex flex-1 flex-col px-3 pb-3 pt-2.5">
         <div className="flex items-start justify-between gap-3">
           <h3 className="text-[13px] font-semibold text-[#23201b]">{item.name}</h3>

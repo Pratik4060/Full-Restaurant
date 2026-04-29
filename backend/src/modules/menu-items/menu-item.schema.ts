@@ -4,7 +4,7 @@ import { z } from "zod";
 const baseMenuItemSchema = z.object({
   name: z.string().min(2),
   description: z.string().min(2),
-  imageUrl: z.string().trim().min(1).optional(),
+  imageUrl: z.string({ required_error: "Image is required" }).trim().min(1, "Image is required"),
   price: z.number().positive(),
   prepTimeMins: z.number().int().min(1),
   type: z.nativeEnum(MealType),

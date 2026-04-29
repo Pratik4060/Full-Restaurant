@@ -7,6 +7,8 @@ import { Button } from "../components/ui/Button";
 import { Input } from "../components/ui/Input";
 import { fetchOffersThunk, setOfferSearch } from "../features/offers/offersSlice";
 import type { Offer } from "../types/api";
+import plus from "../../public/assets/plus.svg"
+
 
 export function OffersPage() {
   const dispatch = useAppDispatch();
@@ -39,7 +41,9 @@ export function OffersPage() {
               setOpen(true);
             }}
           >
-            + Add Offer
+          <img src={plus} alt="plus"/>
+
+             Add Offer
           </Button>
         }
       />

@@ -66,6 +66,7 @@ export function AddOfferModal({
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const [form, setForm] = useState<OfferFormState>(createEmptyForm());
   const [submitError, setSubmitError] = useState<string | null>(null);
+  const imageError = submitError === "Image is required" ? submitError : null;
   const todayDate = getTodayDateInputValue();
 
   useEffect(() => {
@@ -107,6 +108,10 @@ export function AddOfferModal({
       setSubmitError("Valid Until cannot be before Valid From");
       return;
     }
+    if (!form.imageUrl.trim()) {
+      setSubmitError("Image is required");
+      return;
+    }
     const discountText =
       form.discountType === "PERCENT" ? `${form.discountValue}% OFF` : `₹${form.discountValue} OFF`;
 
@@ -114,7 +119,7 @@ export function AddOfferModal({
       title: form.title,
       description: form.description,
       discountText,
-      imageUrl: form.imageUrl || undefined,
+      imageUrl: form.imageUrl.trim(),
       validFrom: form.validFrom ? dateInputToIso(form.validFrom) : undefined,
       validUntil: form.validUntil ? dateInputToIso(form.validUntil) : undefined,
       isActive: form.isActive,
@@ -172,7 +177,8 @@ export function AddOfferModal({
           </div>
 
           <div>
-            <label className="mb-1.5 block text-[11px] text-[#6b665f]">Upload image</label>
+            <label className="mb-1.5 block text-[11px] text-[#6b665f]">Upload image *</label>
+            {imageError ? <p className="mb-1 text-[11px] text-[#d65c5c]">{imageError}</p> : null}
             <div className="flex h-[92px] items-center justify-center overflow-hidden rounded-[6px] border border-dashed border-[#e3cfa8] bg-white text-[#8f867d]">
               <input
                 ref={fileInputRef}
@@ -306,7 +312,9 @@ export function AddOfferModal({
               </span>
             </Button>
           </div>
-          {submitError ? <p className="text-[11px] text-[#d65c5c]">{submitError}</p> : null}
+          {submitError && submitError !== "Image is required" ? (
+            <p className="text-[11px] text-[#d65c5c]">{submitError}</p>
+          ) : null}
         </div>
       </form>
     </Modal>

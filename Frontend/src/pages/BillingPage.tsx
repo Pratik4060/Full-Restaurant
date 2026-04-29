@@ -6,6 +6,7 @@ import { Button } from "../components/ui/Button";
 import { Input } from "../components/ui/Input";
 import { Modal } from "../components/ui/Modal";
 import { Select } from "../components/ui/Select";
+import deletebtn from "../../public/assets/delete.svg"
 import {
   deletePaymentThunk,
   deletePendingOrderThunk,
@@ -72,17 +73,6 @@ function SearchIcon() {
   );
 }
 
-function TrashIcon() {
-  return (
-    <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M3 6h18" />
-      <path d="M8 6V4h8v2" />
-      <path d="M19 6l-1 13H6L5 6" />
-      <path d="M10 11v5" />
-      <path d="M14 11v5" />
-    </svg>
-  );
-}
 
 function ArrowLeft() {
   return (
@@ -464,7 +454,8 @@ export function BillingPage() {
             onClick={() => setDeleteRequest({ kind: "pending", ids: visiblePendingIds })}
             className="inline-flex h-11 min-w-[176px] items-center justify-center gap-3 rounded-[6px] border border-[#ff4f4f] bg-white px-5 text-[15px] font-medium text-[#ff3f3f] transition hover:bg-[#fff5f5] disabled:cursor-not-allowed disabled:opacity-50"
           >
-            <TrashIcon />
+          <img src={deletebtn}  alt="delete"/>
+
             Delete
           </button>
 
@@ -560,7 +551,8 @@ export function BillingPage() {
             onClick={() => setDeleteRequest({ kind: "recent", ids: visibleRecentIds })}
             className="inline-flex h-11 min-w-[176px] items-center justify-center gap-3 rounded-[6px] border border-[#ff4f4f] bg-white px-5 text-[15px] font-medium text-[#ff3f3f] transition hover:bg-[#fff5f5] disabled:cursor-not-allowed disabled:opacity-50"
           >
-            <TrashIcon />
+             <img src={deletebtn}  alt="delete"/>
+
             Delete
           </button>
         </div>

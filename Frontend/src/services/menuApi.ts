@@ -4,7 +4,7 @@ import type { DietType, MealType, MenuItem } from "../types/api";
 export interface CreateMenuItemPayload {
   name: string;
   description: string;
-  imageUrl?: string;
+  imageUrl: string;
   price: number;
   prepTimeMins: number;
   type: MealType;

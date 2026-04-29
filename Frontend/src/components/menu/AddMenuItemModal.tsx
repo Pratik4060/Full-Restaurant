@@ -66,11 +66,13 @@ export function AddMenuItemModal({
   const dispatch = useAppDispatch();
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const [form, setForm] = useState(createEmptyForm);
+  const [submitError, setSubmitError] = useState<string | null>(null);
   const isEditing = Boolean(initialItem);
 
   useEffect(() => {
     if (!open) return;
     setForm(initialItem ? createFormFromItem(initialItem) : createEmptyForm());
+    setSubmitError(null);
     if (fileInputRef.current) {
       fileInputRef.current.value = "";
     }
@@ -78,9 +80,16 @@ export function AddMenuItemModal({
 
   const submit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    setSubmitError(null);
+
+    if (!form.imageUrl.trim()) {
+      setSubmitError("Image is required");
+      return;
+    }
+
     const payload = {
       ...form,
-      imageUrl: form.imageUrl || undefined,
+      imageUrl: form.imageUrl.trim(),
       subCategory: form.subCategory || undefined,
     };
 
@@ -161,7 +170,8 @@ export function AddMenuItemModal({
           </div>
 
           <div>
-            <label className="mb-1.5 block text-[11px] text-[#6b665f]">Upload image</label>
+            <label className="mb-1.5 block text-[11px] text-[#6b665f]">Upload image *</label>
+            {submitError ? <p className="mb-1 text-[11px] text-[#d65c5c]">{submitError}</p> : null}
             <div className="flex h-[92px] items-center justify-center rounded-[6px] border border-dashed border-[#e3cfa8] bg-white text-[#8f867d]">
               <input
                 ref={fileInputRef}
