@@ -22,7 +22,7 @@ interface Props {
   userName: string;
   foodType: "Veg" | "Non Veg";
   tableNumber:string;
-  initialFocus?: "default" | "bestseller" | "all" | "quick-bites" | "beverages";
+  initialFocus?: BreakfastTab | "default" | "bestseller" | "quick-bites" | "beverages";
   onBack: () => void;
 }
 
@@ -31,9 +31,11 @@ const BreakfastDetails: React.FC<Props> = ({ category, userName, onBack, foodTyp
   const { menuItems } = useRestaurantCatalog();
   const publicItems = mapPublicBreakfastItems(menuItems);
   const [activeTab, setActiveTab] = useState<BreakfastTab>(() => {
-    if (initialFocus === "bestseller") return "Bestseller";
-    if (initialFocus === "quick-bites") return "Quick Bites";
-    if (initialFocus === "beverages") return "Beverages";
+    if (initialFocus === "All" || initialFocus === "default") return "All";
+    if (initialFocus === "Bestseller" || initialFocus === "bestseller") return "Bestseller";
+    if (initialFocus === "Quick Bites" || initialFocus === "quick-bites") return "Quick Bites";
+    if (initialFocus === "Beverages" || initialFocus === "beverages") return "Beverages";
+    if (initialFocus === "Health") return "Health";
     return "All";
   });
   const [activeBeverageTab, setActiveBeverageTab] = useState<BeverageTab>('All');

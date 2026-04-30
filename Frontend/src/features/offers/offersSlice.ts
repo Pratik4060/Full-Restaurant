@@ -1,5 +1,6 @@
 import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
 import { offersApi, type CreateOfferPayload, type UpdateOfferPayload } from "../../services/offerApi";
+import { readCachedJson, writeCachedJson } from "../../lib/sliceCache";
 import type { Offer } from "../../types/api";
 
 interface OffersState {
@@ -10,13 +11,15 @@ interface OffersState {
   error: string | null;
 }
 
-const initialState: OffersState = {
+const OFFERS_CACHE_KEY = "admin-offers-cache";
+
+const initialState: OffersState = readCachedJson<OffersState>(OFFERS_CACHE_KEY, {
   list: [],
   search: "",
   loading: false,
   mutating: false,
   error: null,
-};
+});
 
 export const fetchOffersThunk = createAsyncThunk("offers/fetch", async (_, { rejectWithValue }) => {
   try {
@@ -88,6 +91,7 @@ const offersSlice = createSlice({
       .addCase(fetchOffersThunk.fulfilled, (state, action) => {
         state.loading = false;
         state.list = action.payload;
+        writeCachedJson(OFFERS_CACHE_KEY, state);
       })
       .addCase(fetchOffersThunk.rejected, (state, action) => {
         state.loading = false;
@@ -100,6 +104,7 @@ const offersSlice = createSlice({
       .addCase(createOfferThunk.fulfilled, (state, action) => {
         state.mutating = false;
         state.list.unshift(action.payload);
+        writeCachedJson(OFFERS_CACHE_KEY, state);
       })
       .addCase(createOfferThunk.rejected, (state, action) => {
         state.mutating = false;
@@ -113,6 +118,7 @@ const offersSlice = createSlice({
         state.mutating = false;
         const idx = state.list.findIndex((x) => x.id === action.payload.id);
         if (idx >= 0) state.list[idx] = { ...state.list[idx], ...action.payload };
+        writeCachedJson(OFFERS_CACHE_KEY, state);
       })
       .addCase(toggleOfferThunk.rejected, (state, action) => {
         state.mutating = false;
@@ -126,6 +132,7 @@ const offersSlice = createSlice({
         state.mutating = false;
         const idx = state.list.findIndex((x) => x.id === action.payload.id);
         if (idx >= 0) state.list[idx] = { ...state.list[idx], ...action.payload };
+        writeCachedJson(OFFERS_CACHE_KEY, state);
       })
       .addCase(updateOfferThunk.rejected, (state, action) => {
         state.mutating = false;
@@ -138,6 +145,7 @@ const offersSlice = createSlice({
       .addCase(deleteOfferThunk.fulfilled, (state, action) => {
         state.mutating = false;
         state.list = state.list.filter((offer) => offer.id !== action.payload);
+        writeCachedJson(OFFERS_CACHE_KEY, state);
       })
       .addCase(deleteOfferThunk.rejected, (state, action) => {
         state.mutating = false;

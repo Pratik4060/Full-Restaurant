@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { motion } from "framer-motion";
 import { Bell, CheckCircle, ChefHat, ChevronLeft } from "lucide-react";
 import BottomNav from "../components/BottomNav";
@@ -36,6 +36,8 @@ const TrackOrderPage: React.FC<TrackOrderPageProps> = ({
   } = useOrder();
   const [orderData, setOrderData] = useState<PublicOrder | null>(null);
   const [isLoading, setIsLoading] = useState(Boolean(orderNumber));
+  const hasRemoteOrderDataRef = useRef(false);
+  const localOrderDataRef = useRef<PublicOrder | null>(null);
 
   const localOrderData = useMemo(
     () =>
@@ -47,6 +49,10 @@ const TrackOrderPage: React.FC<TrackOrderPageProps> = ({
     [getOrderByNumber, orderItems, orderNumber],
   );
 
+  useEffect(() => {
+    localOrderDataRef.current = localOrderData;
+  }, [localOrderData]);
+
   const loadOrder = useCallback(async () => {
     if (!orderNumber) return;
 
@@ -54,12 +60,15 @@ const TrackOrderPage: React.FC<TrackOrderPageProps> = ({
       setIsLoading(true);
       const data = await restaurantApi.getOrder(orderNumber);
       setOrderData(data);
+      hasRemoteOrderDataRef.current = true;
     } catch {
-      setOrderData(localOrderData);
+      if (!hasRemoteOrderDataRef.current) {
+        setOrderData(localOrderDataRef.current);
+      }
     } finally {
       setIsLoading(false);
     }
-  }, [localOrderData, orderNumber]);
+  }, [orderNumber]);
 
   useRealtimeInvalidate(["orders", "billing"], () => {
     void loadOrder();
@@ -71,6 +80,9 @@ const TrackOrderPage: React.FC<TrackOrderPageProps> = ({
     let cancelled = false;
     let visibilityHandler: (() => void) | null = null;
 
+    hasRemoteOrderDataRef.current = false;
+    setOrderData(null);
+
     const loadOrderWithGuard = async () => {
       try {
         if (!cancelled) {
@@ -79,10 +91,13 @@ const TrackOrderPage: React.FC<TrackOrderPageProps> = ({
         const data = await restaurantApi.getOrder(orderNumber);
         if (!cancelled) {
           setOrderData(data);
+          hasRemoteOrderDataRef.current = true;
         }
       } catch {
         if (!cancelled) {
-          setOrderData(localOrderData);
+          if (!hasRemoteOrderDataRef.current) {
+            setOrderData(localOrderData);
+          }
         }
       } finally {
         if (!cancelled) {
@@ -114,7 +129,7 @@ const TrackOrderPage: React.FC<TrackOrderPageProps> = ({
         }
       }
     };
-  }, [localOrderData, orderNumber]);
+  }, [orderNumber]);
 
   const visibleOrderData = orderData ?? localOrderData;
   const displayOrderNumber = formatDisplayOrderNumber(visibleOrderData?.orderNumber);

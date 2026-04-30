@@ -12,7 +12,6 @@ import Dinner from '../assets/Breakfast/Non-veg/Dinner.svg';
 import type { FoodType, MealCategory } from '../types';
 import { BreakfastItems } from '../components/Breakfast/Data';
 import { LunchItems } from '../components/Lunch/Data';
-import ItemDetailPage from '../components/ItemDetailsPage';
 import HomeInfoModal from '../components/home/HomeInfoModal';
 import HomeMealHero from '../components/home/HomeMealHero';
 import HomeOfferCarousel from '../components/home/HomeOfferCarousel';
@@ -30,6 +29,7 @@ interface HomePageProps {
     category: MealCategory;
     focus: 'all' | 'quick-bites' | 'beverages';
   }) => void;
+  onSearchSelect: (item: HomeSearchItem) => void;
 }
 
 const OFFERS: HomeOffer[] = [
@@ -84,11 +84,11 @@ const HomePage: React.FC<HomePageProps> = ({
   onSelect,
   onMostPopularSelect,
   onOfferSelect,
+  onSearchSelect,
 }) => {
   const { menuItems, offers } = useRestaurantCatalog();
   const [currentOffer, setCurrentOffer] = useState(0);
   const [searchQuery, setSearchQuery] = useState('');
-  const [selectedSearchItem, setSelectedSearchItem] = useState<HomeSearchItem | null>(null);
   const [showInfoModal, setShowInfoModal] = useState(false);
   const [currentMealIdx, setCurrentMealIdx] = useState(getInitialMealIndex);
   const [isListening, setIsListening] = useState(false);
@@ -173,32 +173,6 @@ const HomePage: React.FC<HomePageProps> = ({
     onOfferSelect({ category: currentMeal.category, focus: 'beverages' });
   };
 
-  if (selectedSearchItem) {
-    return (
-      <ItemDetailPage
-        item={{
-          id: selectedSearchItem.id,
-          menuItemId: selectedSearchItem.menuItemId,
-          name: selectedSearchItem.name,
-          price: selectedSearchItem.price,
-          description: selectedSearchItem.description,
-          image: selectedSearchItem.image,
-          rating: 4.5,
-          time: '15-20 Min',
-          isVeg: selectedSearchItem.foodType !== 'Non Veg',
-          category: selectedSearchItem.source,
-          mealType: selectedSearchItem.mealType ?? selectedSearchItem.source,
-          subCategory: selectedSearchItem.subCategory,
-          foodType: selectedSearchItem.foodType,
-          isBestseller: selectedSearchItem.isBestseller,
-        }}
-        onBack={() => setSelectedSearchItem(null)}
-        onNavigateToMenu={() => setSelectedSearchItem(null)}
-        onNavigateToOrders={() => setSelectedSearchItem(null)}
-      />
-    );
-  }
-
   return (
   <div className="w-full min-h-screen bg-[#F8F8F8]">
       {showInfoModal && <HomeInfoModal onClose={() => setShowInfoModal(false)} />}
@@ -215,7 +189,10 @@ const HomePage: React.FC<HomePageProps> = ({
             searchQuery={searchQuery}
             onSearchQueryChange={setSearchQuery}
             searchResults={searchResults}
-            onSelectItem={setSelectedSearchItem}
+            onSelectItem={(item) => {
+              setSearchQuery("");
+              onSearchSelect(item);
+            }}
             isListening={isListening}
             onVoiceClick={startVoiceSearch}
           />

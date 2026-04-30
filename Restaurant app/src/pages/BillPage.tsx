@@ -49,6 +49,7 @@ const BillPage: React.FC<BillPageProps> = ({
   const [paid, setPaid] = useState(false);
   const [orderData, setOrderData] = useState<PublicOrder | null>(null);
   const [isLoading, setIsLoading] = useState(Boolean(orderNumber));
+  const localOrderDataRef = React.useRef<PublicOrder | null>(null);
 
   const localOrderData = useMemo(
     () =>
@@ -60,6 +61,10 @@ const BillPage: React.FC<BillPageProps> = ({
     [getOrderByNumber, orderItems, orderNumber],
   );
 
+  useEffect(() => {
+    localOrderDataRef.current = localOrderData;
+  }, [localOrderData]);
+
   const loadOrder = useCallback(async () => {
     if (!orderNumber) return;
 
@@ -69,11 +74,11 @@ const BillPage: React.FC<BillPageProps> = ({
       setOrderData(data);
       setPaid(Boolean(data.payment));
     } catch {
-      setOrderData(localOrderData);
+      setOrderData(localOrderDataRef.current);
     } finally {
       setIsLoading(false);
     }
-  }, [localOrderData, orderNumber]);
+  }, [orderNumber]);
 
   useRealtimeInvalidate(["orders", "billing"], () => {
     void loadOrder();
@@ -112,7 +117,7 @@ const BillPage: React.FC<BillPageProps> = ({
       cancelled = true;
       clearInterval(interval);
     };
-  }, [localOrderData, orderNumber]);
+  }, [orderNumber]);
 
   const visibleOrderData = orderData ?? localOrderData;
   const displayOrderNumber = formatDisplayOrderNumber(visibleOrderData?.orderNumber);

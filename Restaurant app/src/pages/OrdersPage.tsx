@@ -5,7 +5,6 @@ import OrderCard from '../components/Ordercard';
 import BottomNav from '../components/BottomNav';
 import back from "../assets/back.svg";
 import search from "../assets/search.svg";
-import microphone from "../assets/microphone.svg";
 import Ruppes from '../assets/Ruppes.svg';
 import bell1 from '../assets/bell1.svg'
 
@@ -95,9 +94,6 @@ const OrderPage: React.FC<OrderPageProps> = ({ onBack, onConfirmOrder, onViewCha
                 placeholder="Search your order"
                 className="w-full border-b py-2 pl-10 pr-10 text-sm focus:outline-none focus:border-orange-400"
               />
-              <span className="absolute right-3 top-1/2 -translate-y-1/2">
-                <img src={microphone} alt="microphone" className="w-4 h-4" />
-              </span>
             </div>
           </div>
         </div>
@@ -154,9 +150,6 @@ const OrderPage: React.FC<OrderPageProps> = ({ onBack, onConfirmOrder, onViewCha
               placeholder="Search your order..."
               className="w-full montserrat py-3 pl-10 pr-10 text-sm focus:outline-none placeholder:text-gray-400"
             />
-            <span className="absolute right-3 top-1/2 -translate-y-1/2">
-              <img src={microphone} alt="microphone" className="w-4 h-4" />
-            </span>
           </div>
         </div>
 

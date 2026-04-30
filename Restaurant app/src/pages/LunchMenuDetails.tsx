@@ -23,7 +23,7 @@ interface Props {
   userName: string;
   foodType: FoodType;
   tableNumber: string;
-  initialFocus?: "default" | "bestseller" | "all" | "quick-bites" | "beverages";
+  initialFocus?: LunchTab | "default" | "bestseller" | "beverages";
   onBack: () => void;
 }
 
@@ -41,8 +41,19 @@ const LunchMenuDetails: React.FC<Props> = ({
 
   const displayName = userName.trim() || "Rohit";
   const [activeTab, setActiveTab] = useState<LunchTab>(() => {
-    if (initialFocus === "bestseller") return "Bestseller";
-    if (initialFocus === "beverages") return "Beverages";
+    if (initialFocus === "All" || initialFocus === "default") return "All";
+    if (initialFocus === "Bestseller" || initialFocus === "bestseller") return "Bestseller";
+    if (initialFocus === "Beverages" || initialFocus === "beverages") return "Beverages";
+    if (
+      initialFocus === "Main Course" ||
+      initialFocus === "Appetizer" ||
+      initialFocus === "Roti" ||
+      initialFocus === "Starters" ||
+      initialFocus === "Rice" ||
+      initialFocus === "Dessert"
+    ) {
+      return initialFocus;
+    }
     return "All";
   });
   const [activeBeverageTab, setActiveBeverageTab] =

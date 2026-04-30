@@ -1,5 +1,6 @@
 import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
 import { ordersApi, type CreateOrderPayload } from "../../services/ordersApi";
+import { readCachedJson, writeCachedJson } from "../../lib/sliceCache";
 import type { Order, OrderStatus } from "../../types/api";
 
 interface OrdersState {
@@ -8,15 +9,19 @@ interface OrdersState {
   statusFilter: "ALL" | OrderStatus;
   loading: boolean;
   error: string | null;
+  optimisticStatusById: Record<string, OrderStatus>;
 }
 
-const initialState: OrdersState = {
+const ORDERS_CACHE_KEY = "admin-orders-cache";
+
+const initialState: OrdersState = readCachedJson<OrdersState>(ORDERS_CACHE_KEY, {
   list: [],
   search: "",
   statusFilter: "ALL",
   loading: false,
   error: null,
-};
+  optimisticStatusById: {},
+});
 
 export const fetchOrdersThunk = createAsyncThunk(
   "orders/fetch",
@@ -61,6 +66,14 @@ const ordersSlice = createSlice({
     setOrdersStatusFilter(state, action) {
       state.statusFilter = action.payload as "ALL" | OrderStatus;
     },
+    optimisticSetOrderStatus(state, action) {
+      const { id, status } = action.payload as { id: string; status: OrderStatus };
+      const current = state.list.find((o) => o.id === id);
+      if (!current) return;
+
+      state.optimisticStatusById[id] = current.status;
+      current.status = status;
+    },
   },
   extraReducers(builder) {
     builder
@@ -71,6 +84,7 @@ const ordersSlice = createSlice({
       .addCase(fetchOrdersThunk.fulfilled, (state, action) => {
         state.loading = false;
         state.list = action.payload;
+        writeCachedJson(ORDERS_CACHE_KEY, state);
       })
       .addCase(fetchOrdersThunk.rejected, (state, action) => {
         state.loading = false;
@@ -78,6 +92,15 @@ const ordersSlice = createSlice({
       })
       .addCase(createOrderThunk.fulfilled, (state, action) => {
         state.list.unshift(action.payload);
+        writeCachedJson(ORDERS_CACHE_KEY, state);
+      })
+      .addCase(updateOrderStatusThunk.pending, (state, action) => {
+        const { id, status } = action.meta.arg;
+        const current = state.list.find((o) => o.id === id);
+        if (!current) return;
+
+        state.optimisticStatusById[id] = current.status;
+        current.status = status;
       })
       .addCase(updateOrderStatusThunk.fulfilled, (state, action) => {
         const idx = state.list.findIndex((o) => o.id === action.payload.id);
@@ -89,9 +112,23 @@ const ordersSlice = createSlice({
             items: action.payload.items?.length ? action.payload.items : current.items,
           };
         }
+        delete state.optimisticStatusById[action.payload.id];
+        writeCachedJson(ORDERS_CACHE_KEY, state);
+      })
+      .addCase(updateOrderStatusThunk.rejected, (state, action) => {
+        const { id } = action.meta.arg;
+        const previousStatus = state.optimisticStatusById[id];
+        if (previousStatus) {
+          const current = state.list.find((o) => o.id === id);
+          if (current) {
+            current.status = previousStatus;
+          }
+          delete state.optimisticStatusById[id];
+          writeCachedJson(ORDERS_CACHE_KEY, state);
+        }
       });
   },
 });
 
-export const { setOrdersSearch, setOrdersStatusFilter } = ordersSlice.actions;
+export const { setOrdersSearch, setOrdersStatusFilter, optimisticSetOrderStatus } = ordersSlice.actions;
 export default ordersSlice.reducer;

@@ -1,6 +1,6 @@
 import { PUBLIC_API_BASE_URL } from "../config/env";
 
-const PUBLIC_API_FALLBACK_URL = "https://adminpanel-of-restaurant.onrender.com/api/v1/public";
+const PUBLIC_API_FALLBACK_URL = "http://localhost:3000/api/v1/public";
 
 export type ApiMealType = "BREAKFAST" | "LUNCH" | "DINNER";
 export type ApiDietType = "VEG" | "NON_VEG" | "BEVERAGE";
@@ -87,6 +87,7 @@ export interface PublicOrderDraftItem {
 
 const requestJson = async <T>(baseUrl: string, path: string, options?: RequestInit) => {
   const response = await fetch(`${baseUrl}${path}`, {
+    cache: "no-store",
     headers: {
       "Content-Type": "application/json",
       ...(options?.headers ?? {}),

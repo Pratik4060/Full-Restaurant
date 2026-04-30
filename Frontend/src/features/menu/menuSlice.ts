@@ -1,5 +1,6 @@
 import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
 import { menuApi, type CreateMenuItemPayload, type UpdateMenuItemPayload } from "../../services/menuApi";
+import { readCachedJson, writeCachedJson } from "../../lib/sliceCache";
 import type { DietType, MealType, MenuItem } from "../../types/api";
 
 interface MenuState {
@@ -14,7 +15,9 @@ interface MenuState {
   error: string | null;
 }
 
-const initialState: MenuState = {
+const MENU_CACHE_KEY = "admin-menu-cache";
+
+const initialState: MenuState = readCachedJson<MenuState>(MENU_CACHE_KEY, {
   list: [],
   deletedIds: [],
   search: "",
@@ -24,7 +27,7 @@ const initialState: MenuState = {
   loading: false,
   mutating: false,
   error: null,
-};
+});
 
 export const fetchMenuItemsThunk = createAsyncThunk(
   "menu/fetch",
@@ -117,6 +120,7 @@ const menuSlice = createSlice({
       .addCase(fetchMenuItemsThunk.fulfilled, (state, action) => {
         state.loading = false;
         state.list = action.payload.filter((item) => !state.deletedIds.includes(item.id));
+        writeCachedJson(MENU_CACHE_KEY, state);
       })
       .addCase(fetchMenuItemsThunk.rejected, (state, action) => {
         state.loading = false;
@@ -129,6 +133,7 @@ const menuSlice = createSlice({
       .addCase(createMenuItemThunk.fulfilled, (state, action) => {
         state.mutating = false;
         state.list.unshift(action.payload);
+        writeCachedJson(MENU_CACHE_KEY, state);
       })
       .addCase(createMenuItemThunk.rejected, (state, action) => {
         state.mutating = false;
@@ -142,6 +147,7 @@ const menuSlice = createSlice({
         state.mutating = false;
         const idx = state.list.findIndex((x) => x.id === action.payload.id);
         if (idx >= 0) state.list[idx] = { ...state.list[idx], ...action.payload };
+        writeCachedJson(MENU_CACHE_KEY, state);
       })
       .addCase(toggleMenuAvailabilityThunk.rejected, (state, action) => {
         state.mutating = false;
@@ -155,6 +161,7 @@ const menuSlice = createSlice({
         state.mutating = false;
         const idx = state.list.findIndex((x) => x.id === action.payload.id);
         if (idx >= 0) state.list[idx] = { ...state.list[idx], ...action.payload };
+        writeCachedJson(MENU_CACHE_KEY, state);
       })
       .addCase(updateMenuItemThunk.rejected, (state, action) => {
         state.mutating = false;
@@ -167,6 +174,7 @@ const menuSlice = createSlice({
       .addCase(deleteMenuItemThunk.fulfilled, (state, action) => {
         state.mutating = false;
         state.list = state.list.filter((item) => item.id !== action.payload);
+        writeCachedJson(MENU_CACHE_KEY, state);
       })
       .addCase(deleteMenuItemThunk.rejected, (state, action) => {
         state.mutating = false;

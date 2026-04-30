@@ -10,6 +10,9 @@ import TrackOrderPage from './pages/OrderTrackingPage';
 import PaymentSuccessPage from './pages/PaymentSuccessPage';
 import type { AppStep, UserData, MealCategory, FoodType } from './types';
 import { useOrder } from './contexts/OrderContext';
+import type { HomeSearchItem } from './components/home/types';
+import type { BreakfastTab } from './components/Breakfast/Data';
+import type { LunchTab } from './components/Lunch/Data';
 
 const getTableNumberFromUrl = (): string => {
   const params = new URLSearchParams(window.location.search);
@@ -42,7 +45,13 @@ const App: React.FC = () => {
   const [selectedCategory, setSelectedCategory] = useState<MealCategory>('Breakfast');
   const [selectedFoodType, setSelectedFoodType] = useState<FoodType>('Veg');
   const [menuEntryPoint, setMenuEntryPoint] = useState<
-    'default' | 'bestseller' | 'all' | 'quick-bites' | 'beverages'
+    | 'default'
+    | 'all'
+    | 'bestseller'
+    | 'quick-bites'
+    | 'beverages'
+    | BreakfastTab
+    | LunchTab
   >('default');
 
   useEffect(() => {
@@ -61,6 +70,95 @@ const App: React.FC = () => {
     window.localStorage.setItem('restaurant-user-data', JSON.stringify(data));
     setUserData(data);
     setStep('home');
+  };
+
+  const resolveSearchFocus = (item: HomeSearchItem): typeof menuEntryPoint => {
+    if (item.source === 'Breakfast') {
+      if (
+        item.category === 'Bestseller' ||
+        item.category === 'Beverages' ||
+        item.category === 'Health' ||
+        item.category === 'Quick Bites' ||
+        item.category === 'All'
+      ) {
+        return item.category;
+      }
+      return 'all';
+    }
+
+    if (
+      item.category === 'Bestseller' ||
+      item.category === 'Beverages' ||
+      item.category === 'Dessert' ||
+      item.category === 'Main Course' ||
+      item.category === 'Appetizer' ||
+      item.category === 'Roti' ||
+      item.category === 'Starters' ||
+      item.category === 'Rice' ||
+      item.category === 'All'
+    ) {
+      return item.category;
+    }
+
+    return 'all';
+  };
+
+  const handleSearchSelect = (item: HomeSearchItem) => {
+    const category = item.mealType ?? item.source;
+    setSelectedCategory(category);
+    setSelectedFoodType(item.foodType ?? selectedFoodType);
+    setMenuEntryPoint(resolveSearchFocus(item));
+    setStep('menu');
+  };
+
+  const resolveBreakfastInitialFocus = (
+    focus: typeof menuEntryPoint
+  ): BreakfastTab | "default" | "quick-bites" | "beverages" | "bestseller" => {
+    switch (focus) {
+      case "All":
+      case "all":
+      case "default":
+        return "default";
+      case "Bestseller":
+      case "bestseller":
+        return "Bestseller";
+      case "Beverages":
+      case "beverages":
+        return "Beverages";
+      case "Health":
+        return "Health";
+      case "Quick Bites":
+      case "quick-bites":
+        return "Quick Bites";
+      default:
+        return "default";
+    }
+  };
+
+  const resolveLunchInitialFocus = (
+    focus: typeof menuEntryPoint
+  ): LunchTab | "default" | "beverages" | "bestseller" => {
+    switch (focus) {
+      case "All":
+      case "all":
+      case "default":
+        return "default";
+      case "Bestseller":
+      case "bestseller":
+        return "Bestseller";
+      case "Beverages":
+      case "beverages":
+        return "Beverages";
+      case "Main Course":
+      case "Appetizer":
+      case "Roti":
+      case "Starters":
+      case "Rice":
+      case "Dessert":
+        return focus;
+      default:
+        return "default";
+    }
   };
 
   const onScanSuccess = (): void => setStep('loading');
@@ -152,6 +250,7 @@ const App: React.FC = () => {
             setSelectedCategory(category);
             setStep('menu');
           }}
+          onSearchSelect={handleSearchSelect}
         />
       )}
 
@@ -162,7 +261,7 @@ const App: React.FC = () => {
           userName={userData.name}
           foodType={selectedFoodType}
           tableNumber={userData.table}
-          initialFocus={menuEntryPoint}
+          initialFocus={resolveBreakfastInitialFocus(menuEntryPoint)}
           onBack={() => setStep('home')}
         />
       )}
@@ -175,7 +274,7 @@ const App: React.FC = () => {
           userName={userData.name}
           foodType={selectedFoodType}
           tableNumber={userData.table}
-          initialFocus={menuEntryPoint}
+          initialFocus={resolveLunchInitialFocus(menuEntryPoint)}
           onBack={() => setStep('home')}
         />
       )}

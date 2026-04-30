@@ -1,5 +1,6 @@
 import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
 import { dashboardApi } from "../../services/dashboardApi";
+import { readCachedJson, writeCachedJson } from "../../lib/sliceCache";
 import type {
   DashboardSummary,
   Offer,
@@ -20,7 +21,9 @@ interface DashboardState {
   error: string | null;
 }
 
-const initialState: DashboardState = {
+const DASHBOARD_CACHE_KEY = "admin-dashboard-cache";
+
+const initialState: DashboardState = readCachedJson<DashboardState>(DASHBOARD_CACHE_KEY, {
   summary: null,
   revenue: null,
   revenuePeriod: "weekly",
@@ -29,7 +32,7 @@ const initialState: DashboardState = {
   popularItems: null,
   loading: false,
   error: null,
-};
+});
 
 export const fetchDashboardThunk = createAsyncThunk(
   "dashboard/fetch",
@@ -70,6 +73,7 @@ const dashboardSlice = createSlice({
         state.orderStatus = action.payload.orderStatus;
         state.activeOffers = action.payload.activeOffers;
         state.popularItems = action.payload.popularItems;
+        writeCachedJson(DASHBOARD_CACHE_KEY, state);
       })
       .addCase(fetchDashboardThunk.rejected, (state, action) => {
         state.loading = false;
