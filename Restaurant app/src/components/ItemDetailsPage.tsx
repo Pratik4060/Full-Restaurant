@@ -151,7 +151,7 @@ const ItemDetailPage: React.FC<ItemDetailPageProps> = ({
                             ? "DINNER"
                             : "LUNCH",
                       category: item.category || "All",
-                      subCategory: item.subCategory,
+        subCategory: item.subCategory ?? undefined,
                       diet:
                         item.foodType === "Non Veg"
                           ? "NON_VEG"

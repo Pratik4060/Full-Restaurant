@@ -5,8 +5,6 @@ import { broadcastInvalidation } from "../../realtime/events.js";
 
 const numberValue = (value: unknown) => Number(value ?? 0);
 const withGst = (subtotal: number) => Number((subtotal + Number((subtotal * 0.05).toFixed(2))).toFixed(2));
-const createPublicId = (prefix: string) =>
-  `${prefix}-${Date.now().toString(36).toUpperCase()}-${Math.random().toString(36).slice(2, 8).toUpperCase()}`;
 
 const getPeriod = (period?: string): RevenuePeriod => {
   if (period === "monthly" || period === "yearly") {
@@ -26,7 +24,10 @@ const todayRange = () => {
 const getOrderItemCount = (items: Array<{ quantity: number }>) =>
   items.reduce((sum, item) => sum + item.quantity, 0);
 
-const nextPaymentId = () => createPublicId("PAY");
+const nextPaymentId = async () => {
+  const count = await prisma.payment.count();
+  return `PAY-${1001 + count}`;
+};
 
 export const getBillingSummary = async (period?: string | undefined) => {
   const selectedPeriod = getPeriod(period);

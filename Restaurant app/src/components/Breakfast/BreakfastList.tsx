@@ -1,6 +1,6 @@
 // components/Breakfast/BreakfastList.tsx
 import React, { useMemo } from 'react';
-import { BreakfastItems, type BeverageTab, type HealthTab, type BreakfastTab, type BreakfastItem } from './Data';
+import { type BeverageTab, type HealthTab, type BreakfastTab, type BreakfastItem } from './Data';
 import MenuCard from '../MenuCard';
 import type {FoodType} from "../../types"
 interface Props {
@@ -25,8 +25,7 @@ const MenuList: React.FC<Props> = ({
 const normalizedQuery = searchQuery.trim().toLowerCase();
 
 const filteredItems = useMemo(() => {
-  const mergedItems = [...BreakfastItems, ...items.map((item) => ({ ...item, mealType: item.mealType ?? "Breakfast" }))];
-  const baseItems = mergedItems.filter((item) => {
+  const baseItems = items.map((item) => ({ ...item, mealType: item.mealType ?? "Breakfast" })).filter((item) => {
     if (item.category === "Beverages") return true;
     if (item.category === "Health") return true;
     if (item.foodType) return item.foodType === foodType;

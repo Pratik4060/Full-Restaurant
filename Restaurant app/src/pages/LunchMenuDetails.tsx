@@ -179,7 +179,7 @@ const resolvedActiveTab =
           image: selectedItem.image,
           mealType: selectedItem.mealType ?? category,
           category: selectedItem.category,
-          subCategory: selectedItem.subCategory,
+          subCategory: selectedItem.subCategory ?? undefined,
           foodType: selectedItem.foodType,
           isBestseller: selectedItem.isBestseller,
         }}

@@ -39,7 +39,7 @@ const MenuCard = <T extends MenuCardItem,>({ item, onItemClick }: Props<T>) => {
       image: item.image,
       description: item.description,
       category: item.category,
-      subCategory: item.subCategory,
+      subCategory: item.subCategory ?? undefined,
       mealType: item.mealType,
       foodType: item.foodType,
       isBestseller: item.isBestseller,

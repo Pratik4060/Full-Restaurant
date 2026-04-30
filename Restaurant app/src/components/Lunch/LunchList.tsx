@@ -1,12 +1,11 @@
 import React, { useMemo } from "react";
 import MenuCard from "../MenuCard";
 import {
-  BreakfastItems,
   type BeverageTab,
   type BreakfastTab,
   type BreakfastItem,
 } from "../Breakfast/Data";
-import { LunchItems, type LunchItem, type LunchTab } from "./Data";
+import { type LunchItem, type LunchTab } from "./Data";
 import type { FoodType } from "../../types";
 
 interface Props {
@@ -29,8 +28,7 @@ const LunchList: React.FC<Props> = ({
 const normalizedQuery = searchQuery.trim().toLowerCase();
 
 const filteredItems = useMemo(() => {
-  const mergedItems = [...LunchItems, ...items];
-  const lunchMealItems = mergedItems.filter(
+  const lunchMealItems = items.filter(
     (item) => item.category === "Dessert" || (item.foodType ?? "Veg") === foodType,
   );
 
@@ -50,7 +48,7 @@ const filteredItems = useMemo(() => {
   }
 
   if (activeTab === "Beverages") {
-    const beverageItems = BreakfastItems.filter(
+    const beverageItems = items.filter(
       (item) => item.category === "Beverages",
     );
 

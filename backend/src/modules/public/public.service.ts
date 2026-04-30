@@ -3,8 +3,6 @@ import { prisma } from "../../config/prisma.js";
 import { broadcastInvalidation } from "../../realtime/events.js";
 
 const numberValue = (value: unknown) => Number(value ?? 0);
-const createPublicId = (prefix: string) =>
-  `${prefix}-${Date.now().toString(36).toUpperCase()}-${Math.random().toString(36).slice(2, 8).toUpperCase()}`;
 
 const calculateTotals = (subtotal: number) => {
   const gst = Number((subtotal * 0.05).toFixed(2));
@@ -128,9 +126,15 @@ const serializePublicOrder = (order: {
   };
 };
 
-const nextPaymentId = () => createPublicId("PAY");
+const nextPaymentId = async () => {
+  const count = await prisma.payment.count();
+  return `PAY-${1001 + count}`;
+};
 
-const generateOrderNumber = () => createPublicId("ORD");
+const generateOrderNumber = async () => {
+  const count = await prisma.order.count();
+  return `ORD-${1001 + count}`;
+};
 
 const ensureCustomer = async (payload: { customerName: string; customerPhone?: string | undefined }) => {
   if (payload.customerPhone) {
@@ -166,7 +170,7 @@ const ensureCustomer = async (payload: { customerName: string; customerPhone?: s
   });
 };
 
-const ensureMenuItem = async (payload: PublicMenuItemInput) => {
+const resolveMenuItem = async (payload: PublicMenuItemInput) => {
   if (payload.menuItemId) {
     const existing = await prisma.menuItem.findUnique({
       where: { id: payload.menuItemId },
@@ -185,36 +189,9 @@ const ensureMenuItem = async (payload: PublicMenuItemInput) => {
     },
   });
 
-  if (existing) {
-    return prisma.menuItem.update({
-      where: { id: existing.id },
-      data: {
-        description: payload.description,
-        price: payload.price,
-        prepTimeMins: payload.prepTimeMins ?? existing.prepTimeMins,
-        imageUrl: payload.imageUrl ?? existing.imageUrl,
-        subCategory: payload.subCategory ?? existing.subCategory,
-        isBestseller: payload.isBestseller ?? existing.isBestseller,
-        isAvailable: true,
-      },
-    });
-  }
+  if (existing) return existing;
 
-  return prisma.menuItem.create({
-    data: {
-      name: payload.name,
-      description: payload.description,
-      imageUrl: payload.imageUrl ?? null,
-      price: payload.price,
-      prepTimeMins: payload.prepTimeMins ?? 15,
-      type: payload.type,
-      category: payload.category,
-      subCategory: payload.subCategory ?? null,
-      diet: payload.diet,
-      isBestseller: payload.isBestseller ?? false,
-      isAvailable: true,
-    },
-  });
+  throw new Error(`Menu item not found: ${payload.name}`);
 };
 
 export const listPublicMenuItems = async (filters: {
@@ -280,7 +257,7 @@ export const registerPublicCustomer = async (payload: {
 };
 
 export const likePublicMenuItem = async (payload: PublicMenuItemInput) => {
-  const item = await ensureMenuItem(payload);
+  const item = await resolveMenuItem(payload);
   const updated = await prisma.menuItem.update({
     where: { id: item.id },
     data: {
@@ -306,11 +283,15 @@ export const createPublicOrder = async (payload: {
     customerPhone: payload.customerPhone,
   });
 
-  const menuItems = await Promise.all(payload.items.map((item) => ensureMenuItem(item)));
+  const resolvedItems = await Promise.all(
+    payload.items.map(async (item) => ({
+      payload: item,
+      menuItem: await resolveMenuItem(item),
+    })),
+  );
 
-  const subtotal = payload.items.reduce((sum, item) => {
-    const matched = menuItems.find((menuItem) => menuItem.name === item.name && menuItem.category === item.category) ?? null;
-    const unitPrice = matched ? numberValue(matched.price) : item.price;
+  const subtotal = resolvedItems.reduce((sum, { menuItem, payload: item }) => {
+    const unitPrice = numberValue(menuItem.price);
     return sum + unitPrice * item.quantity;
   }, 0);
 
@@ -326,12 +307,11 @@ export const createPublicOrder = async (payload: {
       status: OrderStatus.PENDING,
       totalAmount: subtotal,
       items: {
-        create: payload.items.map((item) => {
-          const matched = menuItems.find((menuItem) => menuItem.name === item.name && menuItem.category === item.category)!;
-          const unitPrice = numberValue(matched.price);
+        create: resolvedItems.map(({ menuItem, payload: item }) => {
+          const unitPrice = numberValue(menuItem.price);
 
           return {
-            menuItemId: matched.id,
+            menuItemId: menuItem.id,
             quantity: item.quantity,
             unitPrice,
             totalPrice: unitPrice * item.quantity,

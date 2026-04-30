@@ -10,8 +10,6 @@ import nonevegBreakfast from '../assets/Breakfast/Non-veg/Breakfast.svg';
 import Lunch from '../assets/Breakfast/Non-veg/Lunch.svg';
 import Dinner from '../assets/Breakfast/Non-veg/Dinner.svg';
 import type { FoodType, MealCategory } from '../types';
-import { BreakfastItems } from '../components/Breakfast/Data';
-import { LunchItems } from '../components/Lunch/Data';
 import HomeInfoModal from '../components/home/HomeInfoModal';
 import HomeMealHero from '../components/home/HomeMealHero';
 import HomeOfferCarousel from '../components/home/HomeOfferCarousel';
@@ -103,8 +101,6 @@ const HomePage: React.FC<HomePageProps> = ({
 
   const allSearchItems = useMemo<HomeSearchItem[]>(
     () => [
-      ...BreakfastItems.map((item) => ({ ...item, source: 'Breakfast' as const })),
-      ...LunchItems.map((item) => ({ ...item, source: 'Lunch' as const })),
       ...publicBreakfastItems.map((item) => ({ ...item, source: 'Breakfast' as const })),
       ...publicLunchItems.map((item) => ({ ...item, source: 'Lunch' as const })),
     ],

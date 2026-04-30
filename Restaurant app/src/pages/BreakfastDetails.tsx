@@ -122,7 +122,7 @@ const BreakfastDetails: React.FC<Props> = ({ category, userName, onBack, foodTyp
           isVeg: foodType === "Veg"
           ,mealType: selectedItem.mealType ?? "Breakfast"
           ,category: selectedItem.category
-          ,subCategory: selectedItem.subCategory
+          ,subCategory: selectedItem.subCategory ?? undefined
           ,foodType: selectedItem.foodType
           ,isBestseller: selectedItem.isBestseller
         }}
