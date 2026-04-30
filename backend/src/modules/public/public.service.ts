@@ -3,6 +3,8 @@ import { prisma } from "../../config/prisma.js";
 import { broadcastInvalidation } from "../../realtime/events.js";
 
 const numberValue = (value: unknown) => Number(value ?? 0);
+const createPublicId = (prefix: string) =>
+  `${prefix}-${Date.now().toString(36).toUpperCase()}-${Math.random().toString(36).slice(2, 8).toUpperCase()}`;
 
 const calculateTotals = (subtotal: number) => {
   const gst = Number((subtotal * 0.05).toFixed(2));
@@ -126,15 +128,9 @@ const serializePublicOrder = (order: {
   };
 };
 
-const nextPaymentId = async () => {
-  const count = await prisma.payment.count();
-  return `PAY-${1001 + count}`;
-};
+const nextPaymentId = () => createPublicId("PAY");
 
-const generateOrderNumber = async () => {
-  const count = await prisma.order.count();
-  return `ORD-${1001 + count}`;
-};
+const generateOrderNumber = () => createPublicId("ORD");
 
 const ensureCustomer = async (payload: { customerName: string; customerPhone?: string | undefined }) => {
   if (payload.customerPhone) {

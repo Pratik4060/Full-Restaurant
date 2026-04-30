@@ -4,6 +4,8 @@ import type { CreateOrderInput } from "./order.schema.js";
 import { broadcastInvalidation } from "../../realtime/events.js";
 
 const numberValue = (value: unknown) => Number(value ?? 0);
+const createPublicId = (prefix: string) =>
+  `${prefix}-${Date.now().toString(36).toUpperCase()}-${Math.random().toString(36).slice(2, 8).toUpperCase()}`;
 const serializeOrder = <T extends { totalAmount: unknown; items?: Array<{ unitPrice: unknown; totalPrice: unknown }> }>(order: T) => ({
   ...order,
   totalAmount: numberValue(order.totalAmount),
@@ -14,10 +16,7 @@ const serializeOrder = <T extends { totalAmount: unknown; items?: Array<{ unitPr
   })),
 });
 
-const generateOrderNumber = async () => {
-  const count = await prisma.order.count();
-  return `ORD-${1001 + count}`;
-};
+const generateOrderNumber = () => createPublicId("ORD");
 
 export const listOrders = async (status?: OrderStatus, search?: string) => {
   const where: Record<string, unknown> = {};
