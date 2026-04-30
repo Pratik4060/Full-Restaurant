@@ -18,6 +18,7 @@ interface OrderPageProps {
 const OrderPage: React.FC<OrderPageProps> = ({ onBack, onConfirmOrder, onViewChange }) => {
   const { orderItems, updateQuantity, removeItem, getTotalPrice } = useOrder();
   const [searchQuery, setSearchQuery] = useState('');
+  const [isConfirming, setIsConfirming] = useState(false);
   
   // Filter order items based on search query
   const filteredOrderItems = orderItems.filter(item =>
@@ -45,11 +46,16 @@ const OrderPage: React.FC<OrderPageProps> = ({ onBack, onConfirmOrder, onViewCha
   };
 
   const handleConfirmClick = async () => {
+    if (isConfirming) return;
+
+    setIsConfirming(true);
     try {
       await onConfirmOrder();
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Unable to place order right now.';
       window.alert(message);
+    } finally {
+      setIsConfirming(false);
     }
   };
 
@@ -230,9 +236,19 @@ const OrderPage: React.FC<OrderPageProps> = ({ onBack, onConfirmOrder, onViewCha
             {/* Confirm Order Button */}
             <button
               onClick={handleConfirmClick}
-              className="w-full bg-[linear-gradient(90deg,#BC9F76_0%,#64471E_100%)] text-white py-4 rounded-xl font-semibold text-xl"
+              disabled={isConfirming}
+              className="w-full bg-[linear-gradient(90deg,#BC9F76_0%,#64471E_100%)] text-white py-4 rounded-xl font-semibold text-xl transition-opacity disabled:cursor-not-allowed disabled:opacity-80"
             >
-              Confirm Order
+              <span className="inline-flex items-center justify-center gap-2">
+                {isConfirming ? (
+                  <>
+                    <span className="h-5 w-5 rounded-full border-2 border-white border-t-transparent animate-spin" />
+                    Placing Order...
+                  </>
+                ) : (
+                  "Confirm Order"
+                )}
+              </span>
             </button>
           </div>
 

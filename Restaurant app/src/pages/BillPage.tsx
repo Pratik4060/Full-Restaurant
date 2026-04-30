@@ -1,10 +1,10 @@
-import React, { useCallback, useEffect, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { ChevronLeft } from "lucide-react";
 import BottomNav from "../components/BottomNav";
 import { useOrder } from "../contexts/OrderContext";
 import bell from "../assets/bell.svg";
 import Ruppes from "../assets/Ruppes.svg";
-import bill1 from "../assets/bill1.svg";
+import bill1Svg from "../assets/bill1.svg?raw";
 import PaymentMethodButton from "../components/payment/PaymentMethodButton";
 import UPIPaymentPanel from "../components/payment/UPIPaymentPanel";
 import CardPaymentPanel from "../components/payment/CardPaymentPanel";
@@ -14,6 +14,11 @@ import scan from "../assets/scan.svg";
 import counter from "../assets/counter.svg";
 import { restaurantApi, type PublicOrder } from "../services/restaurantApi";
 import { useRealtimeInvalidate } from "../hooks/useRealtimeInvalidate";
+import {
+  buildPublicOrderSnapshot,
+  formatDisplayOrderNumber,
+} from "../lib/orderSnapshot";
+import ReadyOrderBell from "../components/ui/ReadyOrderBell";
 
 interface BillPageProps {
   onBack: () => void;
@@ -32,21 +37,43 @@ const BillPage: React.FC<BillPageProps> = ({
   tableNumber,
   orderNumber = "1234",
 }) => {
-  const { clearOrder, resetPlacedOrder, markOrderPaid, hasReadyOrderNotification } = useOrder();
+  const {
+    clearOrder,
+    resetPlacedOrder,
+    markOrderPaid,
+    hasReadyOrderNotification,
+    getOrderByNumber,
+    orderItems,
+  } = useOrder();
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>(null);
   const [paid, setPaid] = useState(false);
   const [orderData, setOrderData] = useState<PublicOrder | null>(null);
+  const [isLoading, setIsLoading] = useState(Boolean(orderNumber));
+
+  const localOrderData = useMemo(
+    () =>
+      buildPublicOrderSnapshot(
+        orderNumber ?? "",
+        getOrderByNumber(orderNumber ?? ""),
+        orderItems,
+      ),
+    [getOrderByNumber, orderItems, orderNumber],
+  );
+
   const loadOrder = useCallback(async () => {
     if (!orderNumber) return;
 
     try {
+      setIsLoading(true);
       const data = await restaurantApi.getOrder(orderNumber);
       setOrderData(data);
       setPaid(Boolean(data.payment));
     } catch {
-      setOrderData(null);
+      setOrderData(localOrderData);
+    } finally {
+      setIsLoading(false);
     }
-  }, [orderNumber]);
+  }, [localOrderData, orderNumber]);
 
   useRealtimeInvalidate(["orders", "billing"], () => {
     void loadOrder();
@@ -59,6 +86,9 @@ const BillPage: React.FC<BillPageProps> = ({
 
     const loadOrderWithGuard = async () => {
       try {
+        if (!cancelled) {
+          setIsLoading(true);
+        }
         const data = await restaurantApi.getOrder(orderNumber);
         if (!cancelled) {
           setOrderData(data);
@@ -66,7 +96,11 @@ const BillPage: React.FC<BillPageProps> = ({
         }
       } catch {
         if (!cancelled) {
-          setOrderData(null);
+          setOrderData(localOrderData);
+        }
+      } finally {
+        if (!cancelled) {
+          setIsLoading(false);
         }
       }
     };
@@ -78,7 +112,10 @@ const BillPage: React.FC<BillPageProps> = ({
       cancelled = true;
       clearInterval(interval);
     };
-  }, [orderNumber]);
+  }, [localOrderData, orderNumber]);
+
+  const visibleOrderData = orderData ?? localOrderData;
+  const displayOrderNumber = formatDisplayOrderNumber(visibleOrderData?.orderNumber);
 
   const completePayment = async (method: "UPI" | "CARD" | "CASH") => {
     const response = await restaurantApi.payOrder(orderNumber, method);
@@ -149,17 +186,21 @@ const BillPage: React.FC<BillPageProps> = ({
           Payment
         </h1>
 
-        <button className="relative p-2 hover:bg-gray-100 rounded-full transition-colors">
+        <ReadyOrderBell
+          hasNotification={hasReadyOrderNotification}
+          ariaLabel="Order notifications"
+          popupText="Order is ready"
+          buttonClassName="p-2 hover:bg-gray-100 rounded-full transition-colors flex items-center justify-center"
+          popupClassName="right-0"
+          dotClassName="right-1 top-1"
+        >
           <img src={bell} alt="bell" className="h-7 w-7 md:h-8 md:w-8 invert" />
-          {hasReadyOrderNotification ? (
-            <span className="absolute right-1 top-1 h-2.5 w-2.5 rounded-full bg-[#ff4d4f] ring-2 ring-white" />
-          ) : null}
-        </button>
+        </ReadyOrderBell>
       </div>
 
       <div className="flex-1 overflow-y-auto px-6 md:px-8 pb-28">
         <div className="max-w-full mx-auto">
-          {!orderPlaced || !orderData ? (
+          {!orderPlaced || !orderNumber ? (
             <div className="bg-white rounded-[32px] border border-orange-200 shadow-sm px-6 py-12 mt-16 text-center">
               <h2 className="text-2xl md:text-3xl font-bold text-gray-900 mb-3">
                 No bill available
@@ -168,28 +209,38 @@ const BillPage: React.FC<BillPageProps> = ({
                 Place an order first to view the bill.
               </p>
             </div>
+          ) : isLoading && !visibleOrderData ? (
+            <div className="bg-white rounded-[32px] border border-orange-200 shadow-sm px-6 py-12 mt-16 text-center">
+              <h2 className="text-2xl md:text-3xl font-bold text-gray-900 mb-3">
+                Loading bill
+              </h2>
+              <p className="text-base md:text-lg text-gray-500 font-medium">
+                We are fetching your bill details.
+              </p>
+            </div>
           ) : (
             <div className="flex flex-col gap-6">
               <div className="bg-white rounded-[32px] border border-orange-200 shadow-sm px-6 py-8 w-full">
                 <div className="flex flex-col items-center text-center">
-                  <div className="w-24 h-24 rounded-[28px] bg-white shadow-md flex items-center justify-center mb-4">
-                    <img src={bill1} alt="bill" className="w-12 h-12" />
-                  </div>
 
                   <h2 className="text-xl md:text-2xl font-semibold text-black">
                     Order Summary
                   </h2>
                   <p className="text-base text-gray-400 mt-2">
-                    Order {orderData.orderNumber} - Table {orderData.tableNumber}
+                    {displayOrderNumber ? `Order ${displayOrderNumber}` : "Order placed"} - Table {visibleOrderData?.tableNumber}
                   </p>
                 </div>
 
                 <div className="my-8 flex justify-center">
-                  <img src={bill1} alt="bill" className="w-16 h-16" />
+                  <div
+                    className="w-28 h-28 overflow-hidden [&>svg]:h-full [&>svg]:w-full [&>svg]:object-contain"
+                    aria-hidden="true"
+                    dangerouslySetInnerHTML={{ __html: bill1Svg }}
+                  />
                 </div>
 
                 <div className="pt-6 space-y-4">
-                  {orderData.items.length === 0 ? (
+                  {visibleOrderData?.items.length === 0 ? (
                     <p className="text-center text-gray-400 text-base">
                       No items added yet
                     </p>
@@ -202,7 +253,7 @@ const BillPage: React.FC<BillPageProps> = ({
                       </div>
 
                       <div className="space-y-3 max-h-96 overflow-y-auto">
-                        {orderData.items.map((item) => (
+                        {visibleOrderData?.items.map((item) => (
                           <div key={item.id} className="flex items-center justify-between py-2">
                             <p className="text-base md:text-lg text-gray-800 w-1/2">{item.name}</p>
                             <p className="text-base md:text-lg text-gray-600 w-1/4 text-center">
@@ -226,19 +277,23 @@ const BillPage: React.FC<BillPageProps> = ({
                     <span className="text-base md:text-lg text-gray-700">Subtotal</span>
                     <div className="flex items-center gap-1.5 text-base md:text-lg text-gray-700">
                       <img src={Ruppes} alt="rupees" className="w-4 h-4 md:w-5 md:h-5" />
-                      <span>{orderData.subtotal.toLocaleString("en-IN")}</span>
+                    <span>
+                      {visibleOrderData ? visibleOrderData.subtotal.toLocaleString("en-IN") : "0"}
+                    </span>
                     </div>
                   </div>
 
                   <div className="flex items-center justify-between">
                     <span className="text-base md:text-lg text-gray-700">GST (5%)</span>
-                    <div className="flex items-center gap-1.5 text-base md:text-lg text-gray-500">
+                    <div className="flex items-center gap-1.5 text-base md:text-lg ">
                       <img
                         src={Ruppes}
                         alt="rupees"
-                        className="w-4 h-4 md:w-5 md:h-5 opacity-60"
+                        className="w-4 h-4 md:w-5 md:h-5 "
                       />
-                      <span>{orderData.gst.toLocaleString("en-IN")}</span>
+                      <span>
+                        {visibleOrderData ? visibleOrderData.gst.toLocaleString("en-IN") : "0"}
+                      </span>
                     </div>
                   </div>
 
@@ -248,7 +303,11 @@ const BillPage: React.FC<BillPageProps> = ({
                     </span>
                     <div className="flex items-center gap-1.5 text-xl md:text-2xl font-bold text-[#18B65B]">
                       <img src={Ruppes} alt="rupees" className="w-5 h-5 md:w-6 md:h-6" />
-                      <span>{orderData.totalAmount.toLocaleString("en-IN")}</span>
+                      <span>
+                        {visibleOrderData
+                          ? visibleOrderData.totalAmount.toLocaleString("en-IN")
+                          : "0"}
+                      </span>
                     </div>
                   </div>
                 </div>

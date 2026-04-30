@@ -170,7 +170,6 @@ const DetailsForm: React.FC<Props> = ({ onSubmit, tableNumber }) => {
                 <div className="relative">
                   <input
                     type="text"
-                    inputMode="numeric"
                     value={guestDisplayValue}
                     onFocus={() => {
                       setGuestFocused(true);

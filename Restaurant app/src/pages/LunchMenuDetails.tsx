@@ -17,6 +17,7 @@ import BillPage from "./BillPage";
 import type { FoodType } from "../types";
 import { useRestaurantCatalog } from '../hooks/useRestaurantCatalog';
 import { mapPublicLunchItems } from '../lib/catalog';
+import ReadyOrderBell from '../components/ui/ReadyOrderBell';
 interface Props {
   category: MealCategory;
   userName: string;
@@ -222,18 +223,20 @@ const resolvedActiveTab =
   }
 
   return (
-    <div className="min-h-screen bg-white flex flex-col">
-      <div className="px-2 pt-9 pb-2 flex justify-between">
-        <button onClick={onBack} className="text-2xl font-medium">
-          <img src={back} alt="back" />
-        </button>
-        <button className="relative">
-          <img src={bell} className="invert h-8" alt="notifications" />
-          {hasReadyOrderNotification ? (
-            <span className="absolute right-0 top-0 h-2.5 w-2.5 rounded-full bg-[#ff4d4f] ring-2 ring-white" />
-          ) : null}
-        </button>
-      </div>
+      <div className="min-h-screen bg-white flex flex-col">
+        <div className="px-2 pt-9 pb-2 flex justify-between">
+          <button onClick={onBack} className="text-2xl font-medium">
+            <img src={back} alt="back" />
+          </button>
+          <ReadyOrderBell
+            hasNotification={hasReadyOrderNotification}
+            ariaLabel="Order notifications"
+            popupText="Order is ready"
+            buttonClassName="flex items-center justify-center"
+          >
+            <img src={bell} className="invert h-8" alt="notifications" />
+          </ReadyOrderBell>
+        </div>
 
       <div className="flex justify-center">
         <h1 className="text-[24px] font-bold border-b-4 border-orange-400 pb-1">

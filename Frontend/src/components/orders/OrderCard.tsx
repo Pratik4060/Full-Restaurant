@@ -53,6 +53,7 @@ export function OrderCard({ order }: { order: Order }) {
   const primaryNext = nextStatus[order.status];
   const primaryLabel = order.status === "CANCELED" || order.status === "COMPLETED" ? null : primaryActionLabel[order.status] ?? null;
   const primaryClassName = order.status ? primaryActionStyles[order.status] ?? "" : "";
+  const itemCount = order.items.length;
 
   return (
     <div className="flex h-full min-h-[414px] w-full flex-col rounded-[18px] border border-[#ece4d8] bg-white px-6 py-6 shadow-[0_5px_16px_rgba(44,33,18,0.06)]">
@@ -64,6 +65,7 @@ export function OrderCard({ order }: { order: Order }) {
       <div className="space-y-1.5">
         <p className="text-[14px] font-medium text-[#22201d]">{order.customerName}</p>
         <p className="text-[12px] text-[#4f4a44]">Table: {order.tableNumber}</p>
+        <p className="text-[12px] text-[#4f4a44]">Items: {itemCount}</p>
       </div>
 
       <div className="my-4 border-t border-[#d7d1c7]" />

@@ -110,6 +110,28 @@ const getOrderTotals = (items: OrderItem[]) => {
   };
 };
 
+const createHistoryRecord = (
+  orderNumber: string,
+  tableNumber: string,
+  items: OrderItem[],
+  status: OrderStatus,
+  timestamp: string,
+): OrderHistoryRecord => {
+  const { subtotal, gst, totalAmount } = getOrderTotals(items);
+
+  return {
+    orderNumber,
+    tableNumber,
+    items,
+    subtotal,
+    gst,
+    totalAmount,
+    status,
+    createdAt: timestamp,
+    updatedAt: timestamp,
+  };
+};
+
 export const OrderProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [orderItems, setOrderItems] = useState<OrderItem[]>([]);
   const [orderPlaced, setOrderPlaced] = useState(() => {
@@ -192,59 +214,91 @@ export const OrderProvider: React.FC<{ children: ReactNode }> = ({ children }) =
       : null;
 
     const itemsSnapshot = orderItems.map((item) => ({ ...item }));
-    const response = await restaurantApi.createOrder({
-      customerName: parsedUserData?.name ?? "Guest",
-      customerPhone: parsedUserData?.mobile ?? undefined,
-      tableNumber: meta?.tableNumber ?? parsedUserData?.table ?? "12",
-      guestCount: Number(parsedUserData?.guests ?? 1),
-      items: itemsSnapshot.map((item) => ({
-        menuItemId: item.menuItemId,
-        name: item.name,
-        description: item.description ?? "Restaurant menu item",
-        imageUrl: item.image || undefined,
-        price: item.price,
-        quantity: item.quantity,
-        type:
-          item.mealType === "Breakfast"
-            ? "BREAKFAST"
-            : item.mealType === "Dinner"
-              ? "DINNER"
-              : "LUNCH",
-        category: item.category ?? "All",
-        subCategory: item.subCategory,
-        diet:
-          item.foodType === "Non Veg"
-            ? "NON_VEG"
-            : item.category === "Beverages"
-              ? "BEVERAGE"
-              : "VEG",
-        isBestseller: item.isBestseller,
-      })),
-    });
+    const pendingOrderNumber = `TMP-${Date.now()}-${Math.random().toString(36).slice(2, 8).toUpperCase()}`;
+    const createdAt = new Date().toISOString();
 
-    const now = new Date().toISOString();
-
-    setOrderNumber(response.orderNumber);
+    setOrderNumber(pendingOrderNumber);
     setOrderPlaced(true);
     setHasReadyOrderNotification(false);
     setOrderHistory((prev) =>
       normalizeHistory([
-        {
-          orderNumber: response.orderNumber,
-          tableNumber: response.tableNumber,
-          items: itemsSnapshot,
-          subtotal: response.subtotal,
-          gst: response.gst,
-          totalAmount: response.totalAmount,
-          status: "placed",
-          createdAt: now,
-          updatedAt: now,
-        },
-        ...prev,
+        createHistoryRecord(
+          pendingOrderNumber,
+          meta?.tableNumber ?? parsedUserData?.table ?? "12",
+          itemsSnapshot,
+          "placed",
+          createdAt,
+        ),
+        ...prev.filter((entry) => entry.orderNumber !== pendingOrderNumber),
       ]),
     );
 
-    return response.orderNumber;
+    void (async () => {
+      try {
+        const response = await restaurantApi.createOrder({
+          customerName: parsedUserData?.name ?? "Guest",
+          customerPhone: parsedUserData?.mobile ?? undefined,
+          tableNumber: meta?.tableNumber ?? parsedUserData?.table ?? "12",
+          guestCount: Number(parsedUserData?.guests ?? 1),
+          items: itemsSnapshot.map((item) => ({
+            menuItemId: item.menuItemId,
+            name: item.name,
+            description: item.description ?? "Restaurant menu item",
+            imageUrl: item.image || undefined,
+            price: item.price,
+            quantity: item.quantity,
+            type:
+              item.mealType === "Breakfast"
+                ? "BREAKFAST"
+                : item.mealType === "Dinner"
+                  ? "DINNER"
+                  : "LUNCH",
+            category: item.category ?? "All",
+            subCategory: item.subCategory,
+            diet:
+              item.foodType === "Non Veg"
+                ? "NON_VEG"
+                : item.category === "Beverages"
+                  ? "BEVERAGE"
+                  : "VEG",
+            isBestseller: item.isBestseller,
+          })),
+        });
+
+        const now = new Date().toISOString();
+        setOrderNumber(response.orderNumber);
+        setOrderHistory((prev) =>
+          normalizeHistory(
+            prev.map((entry) =>
+              entry.orderNumber === pendingOrderNumber
+                ? {
+                    ...entry,
+                    orderNumber: response.orderNumber,
+                    tableNumber: response.tableNumber,
+                    items: itemsSnapshot,
+                    subtotal: response.subtotal,
+                    gst: response.gst,
+                    totalAmount: response.totalAmount,
+                    status: "placed",
+                    updatedAt: now,
+                  }
+                : entry,
+            ),
+          ),
+        );
+      } catch {
+        setOrderPlaced(false);
+        setOrderNumber("");
+        setHasReadyOrderNotification(false);
+        setOrderHistory((prev) =>
+          normalizeHistory(
+            prev.filter((entry) => entry.orderNumber !== pendingOrderNumber),
+          ),
+        );
+      }
+    })();
+
+    return pendingOrderNumber;
   };
 
   const resetPlacedOrder = () => {

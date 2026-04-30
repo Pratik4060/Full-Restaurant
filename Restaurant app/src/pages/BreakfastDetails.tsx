@@ -6,6 +6,7 @@ import BottomNav from '../components/BottomNav';
 import OrderPage from './OrdersPage';
 import ItemDetailPage from '../components/ItemDetailsPage';
 import TrackOrderPage from './OrderTrackingPage';
+import ReadyOrderBell from '../components/ui/ReadyOrderBell';
 import type { BeverageTab, HealthTab, BreakfastTab, BreakfastItem } from '../components/Breakfast/Data';
 import bell from '../assets/bell.svg'
 import back from "../assets/back.svg"
@@ -174,21 +175,23 @@ const BreakfastDetails: React.FC<Props> = ({ category, userName, onBack, foodTyp
   }
 
   return (
-    <div className="min-h-screen bg-white flex flex-col">
-      {/* Header */}
-      <div className="px-2 pt-9 pb-2 flex justify-between">
-        <button onClick={onBack} className="text-2xl font-medium">
-          <img src={back} alt="back" />
-        </button>
-        <div className="flex gap-3">
-          <button className="relative">
-            <img src={bell} className="invert h-8" alt="bell" />
-            {hasReadyOrderNotification ? (
-              <span className="absolute right-0 top-0 h-2.5 w-2.5 rounded-full bg-[#ff4d4f] ring-2 ring-white" />
-            ) : null}
+      <div className="min-h-screen bg-white flex flex-col">
+        {/* Header */}
+        <div className="px-2 pt-9 pb-2 flex justify-between">
+          <button onClick={onBack} className="text-2xl font-medium">
+            <img src={back} alt="back" />
           </button>
+          <div className="flex gap-3">
+            <ReadyOrderBell
+              hasNotification={hasReadyOrderNotification}
+              ariaLabel="Order notifications"
+              popupText="Order is ready"
+              buttonClassName="flex items-center justify-center"
+            >
+              <img src={bell} className="invert h-8" alt="bell" />
+            </ReadyOrderBell>
+          </div>
         </div>
-      </div>
 
       <div className="flex justify-center">
         <h1 className="text-[24px] font-bold border-b-4 border-orange-400 pb-1">
