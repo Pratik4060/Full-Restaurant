@@ -90,10 +90,7 @@ const PaymentSuccessPage: React.FC<Props> = ({
               Thank you for your order
             </h2>
 
-            <p className="mt-4 text-center text-sm text-[#6e6e6e]">
-              Payment via UPI successful
-            </p>
-
+                 
             {/* Chef Image */}
             <div className="mx-auto mt-6 flex h-30 w-30 items-center justify-center">
               <img src={chef} alt="chef" className='h-35 w-35' />
