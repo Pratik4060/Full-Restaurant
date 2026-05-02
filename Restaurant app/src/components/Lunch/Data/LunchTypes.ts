@@ -3,7 +3,6 @@ export type LunchTab =
   | "Main Course"
   | 'Appetizer'
   | "Roti"
-  | "Starters"
   | "Rice"
   | "Bestseller"
   | "Beverages"

@@ -95,16 +95,36 @@ const HomePage: React.FC<HomePageProps> = ({
   const currentMeal = activeMealData[currentMealIdx];
   const publicBreakfastItems = useMemo(() => mapPublicBreakfastItems(menuItems), [menuItems]);
   const publicLunchItems = useMemo(() => mapPublicLunchItems(menuItems, "Lunch"), [menuItems]);
+  const publicDinnerItems = useMemo(() => mapPublicLunchItems(menuItems, "Dinner"), [menuItems]);
   const mergedOffers = useMemo(() => mapOffersToHomeOffers(offers, OFFERS), [offers]);
   const activeOfferIndex = mergedOffers.length > 0 ? currentOffer % mergedOffers.length : 0;
   const activeOffer = mergedOffers[activeOfferIndex] ?? OFFERS[activeOfferIndex % OFFERS.length];
 
   const allSearchItems = useMemo<HomeSearchItem[]>(
-    () => [
-      ...publicBreakfastItems.map((item) => ({ ...item, source: 'Breakfast' as const })),
-      ...publicLunchItems.map((item) => ({ ...item, source: 'Lunch' as const })),
-    ],
-    [publicBreakfastItems, publicLunchItems],
+    () => {
+      const seen = new Map<string | number, HomeSearchItem>();
+
+      for (const item of publicBreakfastItems.map((entry) => ({ ...entry, source: 'Breakfast' as const }))) {
+        if (!seen.has(item.menuItemId ?? item.id)) {
+          seen.set(item.menuItemId ?? item.id, item);
+        }
+      }
+
+      for (const item of publicLunchItems.map((entry) => ({ ...entry, source: 'Lunch' as const }))) {
+        if (!seen.has(item.menuItemId ?? item.id)) {
+          seen.set(item.menuItemId ?? item.id, item);
+        }
+      }
+
+      for (const item of publicDinnerItems.map((entry) => ({ ...entry, source: 'Dinner' as const }))) {
+        if (!seen.has(item.menuItemId ?? item.id)) {
+          seen.set(item.menuItemId ?? item.id, item);
+        }
+      }
+
+      return [...seen.values()];
+    },
+    [publicBreakfastItems, publicLunchItems, publicDinnerItems],
   );
 
   const searchResults = useMemo(() => {

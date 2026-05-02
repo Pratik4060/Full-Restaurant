@@ -13,10 +13,9 @@ const gradients = [
 
 const lunchCategories: LunchTab[] = [
   "All",
-  "Main Course",
   "Appetizer",
+  "Main Course",
   "Roti",
-  "Starters",
   "Rice",
   "Bestseller",
   "Beverages",
@@ -51,7 +50,7 @@ export const mapOffersToHomeOffers = (offers: PublicOffer[], fallback: HomeOffer
 export const mapPublicBreakfastItems = (items: PublicMenuItem[]): BreakfastItem[] =>
   dedupe(
     items
-      .filter((item) => item.type === "BREAKFAST")
+      .filter((item) => item.type === "BREAKFAST" || item.category === "Beverages")
       .map((item) => ({
         id: item.id,
         menuItemId: item.id,
@@ -78,7 +77,7 @@ export const mapPublicBreakfastItems = (items: PublicMenuItem[]): BreakfastItem[
 export const mapPublicLunchItems = (items: PublicMenuItem[], mealType: MealCategory): LunchItem[] =>
   dedupe(
     items
-      .filter((item) => item.type === (mealType === "Lunch" ? "LUNCH" : "DINNER"))
+      .filter((item) => item.type === "LUNCH" || item.type === "DINNER" || item.category === "Beverages")
       .map((item) => ({
         id: item.id,
         menuItemId: item.id,

@@ -134,7 +134,7 @@ const lunchModules = [
     file: "components/Lunch/Data/Starters.ts",
     exportName: "StarterItems",
     type: "LUNCH" as MealType,
-    category: "Starters",
+    category: "Appetizer",
     prepTimeMins: 14,
   },
   {
@@ -179,7 +179,7 @@ const dinnerModules = [
     file: "components/Lunch/Data/Starters.ts",
     exportName: "StarterItems",
     type: "DINNER" as MealType,
-    category: "Starters",
+    category: "Appetizer",
     prepTimeMins: 14,
   },
   {

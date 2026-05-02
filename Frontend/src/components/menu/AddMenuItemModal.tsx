@@ -9,8 +9,8 @@ import { Select } from "../ui/Select";
 
 const mealCategoryOptions: Record<MealType, string[]> = {
   BREAKFAST: ["All", "Beverages", "Health", "Quick Bites"],
-  LUNCH: ["Main Course", "Appetizer", "Roti", "Starters", "Rice", "Dessert"],
-  DINNER: ["Main Course", "Appetizer", "Roti", "Starters", "Rice", "Dessert"],
+  LUNCH: ["Main Course", "Appetizer", "Roti", "Rice", "Dessert", "Beverages"],
+  DINNER: ["Main Course", "Appetizer", "Roti", "Rice", "Dessert", "Beverages"],
 };
 
 const subCategoryOptions: Record<string, string[]> = {
@@ -18,14 +18,32 @@ const subCategoryOptions: Record<string, string[]> = {
   Health: ["Veg", "Non Veg"],
 };
 
+type MenuItemFormState = {
+  name: string;
+  description: string;
+  imageUrl: string;
+  price: string;
+  prepTimeMins: string;
+  type: MealType | "";
+  category: string;
+  subCategory: string;
+  diet: DietType | "";
+  isBestseller: boolean;
+  isAvailable: boolean;
+};
+
+type MenuItemFormErrors = Partial<
+  Record<"name" | "description" | "imageUrl" | "price" | "prepTimeMins" | "type" | "category" | "subCategory" | "diet", string>
+>;
+
 const createEmptyForm = () => ({
   name: "",
   description: "",
   imageUrl: "",
-  price: 1,
-  prepTimeMins: 10,
-  type: "BREAKFAST" as MealType,
-  category: "All",
+  price: "",
+  prepTimeMins: "",
+  type: "" as MealType | "",
+  category: "",
   subCategory: "",
   diet: "VEG" as DietType,
   isBestseller: false,
@@ -36,8 +54,8 @@ const createFormFromItem = (item: MenuItem) => ({
   name: item.name,
   description: item.description,
   imageUrl: item.imageUrl ?? "",
-  price: item.price,
-  prepTimeMins: item.prepTimeMins,
+  price: String(item.price),
+  prepTimeMins: String(item.prepTimeMins),
   type: item.type,
   category: item.category,
   subCategory: item.subCategory ?? "",
@@ -76,6 +94,9 @@ const compressImage = async (file: File, maxWidth = 1200, maxHeight = 1200, qual
   return canvas.toDataURL("image/jpeg", quality);
 };
 
+const renderFieldError = (message?: string) =>
+  message ? <p className="mt-1 text-[11px] text-[#d65c5c]">{message}</p> : null;
+
 export function AddMenuItemModal({
   open,
   onClose,
@@ -88,58 +109,106 @@ export function AddMenuItemModal({
   const dispatch = useAppDispatch();
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const [form, setForm] = useState(createEmptyForm);
+  const [formErrors, setFormErrors] = useState<MenuItemFormErrors>({});
   const [submitError, setSubmitError] = useState<string | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const isEditing = Boolean(initialItem);
 
   useEffect(() => {
     if (!open) return;
     setForm(initialItem ? createFormFromItem(initialItem) : createEmptyForm());
+    setFormErrors({});
     setSubmitError(null);
+    setIsSubmitting(false);
     if (fileInputRef.current) {
       fileInputRef.current.value = "";
     }
   }, [initialItem, open]);
 
+  const categoryOptions = form.type ? mealCategoryOptions[form.type] : [];
+  const subCategories = form.category ? subCategoryOptions[form.category] ?? [] : [];
+
+  const validateForm = (current: MenuItemFormState) => {
+    const nextErrors: MenuItemFormErrors = {};
+
+    if (!current.name.trim()) nextErrors.name = "Name is required";
+    else if (current.name.trim().length < 2) nextErrors.name = "Name must be at least 2 characters";
+
+    if (!current.description.trim()) nextErrors.description = "Description is required";
+    else if (current.description.trim().length < 2) nextErrors.description = "Description must be at least 2 characters";
+
+    if (!current.imageUrl.trim()) nextErrors.imageUrl = "Image is required";
+
+    const priceValue = Number(current.price);
+    if (!current.price.trim()) nextErrors.price = "Price is required";
+    else if (!Number.isFinite(priceValue) || priceValue <= 0) nextErrors.price = "Price must be greater than 0";
+
+    const prepTimeValue = Number(current.prepTimeMins);
+    if (!current.prepTimeMins.trim()) nextErrors.prepTimeMins = "Prep time is required";
+    else if (!Number.isInteger(prepTimeValue) || prepTimeValue <= 0) nextErrors.prepTimeMins = "Prep time must be a whole number greater than 0";
+
+    if (!current.type) nextErrors.type = "Type is required";
+    if (!current.category) nextErrors.category = "Category is required";
+    if (subCategoryOptions[current.category]?.length && !current.subCategory.trim()) {
+      nextErrors.subCategory = "Subcategory is required";
+    }
+
+    return nextErrors;
+  };
+
   const submit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setSubmitError(null);
-
-    if (!form.imageUrl.trim()) {
-      setSubmitError("Image is required");
-      return;
-    }
+    const nextErrors = validateForm(form);
+    setFormErrors(nextErrors);
+    if (Object.keys(nextErrors).length > 0) return;
 
     const payload = {
-      ...form,
+      name: form.name.trim(),
+      description: form.description.trim(),
       imageUrl: form.imageUrl.trim(),
-      subCategory: form.subCategory || undefined,
+      price: Number(form.price),
+      prepTimeMins: Number(form.prepTimeMins),
+      type: form.type as MealType,
+      category: form.category.trim(),
+      subCategory: form.subCategory.trim() ? form.subCategory.trim() : undefined,
+      diet: form.diet as DietType,
+      isBestseller: form.isBestseller,
+      isAvailable: form.isAvailable,
     };
 
-    if (initialItem) {
-      await dispatch(
-        updateMenuItemThunk({
-          id: initialItem.id,
-          data: payload,
-        })
-      );
-    } else {
-      await dispatch(createMenuItemThunk(payload));
+    setIsSubmitting(true);
+    try {
+      if (initialItem) {
+        await dispatch(
+          updateMenuItemThunk({
+            id: initialItem.id,
+            data: payload,
+          })
+        ).unwrap();
+      } else {
+        await dispatch(createMenuItemThunk(payload)).unwrap();
+      }
+      onClose();
+    } catch (error) {
+      setSubmitError((error as Error).message || "Unable to save menu item");
+    } finally {
+      setIsSubmitting(false);
     }
-
-    onClose();
   };
 
-  const handleTypeChange = (type: MealType) => {
-    const nextCategories = mealCategoryOptions[type];
+  const handleTypeChange = (type: MealType | "") => {
+    const nextCategories = type ? mealCategoryOptions[type] : [];
     setForm((current) => ({
       ...current,
       type,
-      category: nextCategories.includes(current.category) ? current.category : nextCategories[0],
+      category: nextCategories.includes(current.category) ? current.category : "",
       subCategory: (() => {
-        const nextCategory = nextCategories.includes(current.category) ? current.category : nextCategories[0];
+        const nextCategory = nextCategories.includes(current.category) ? current.category : "";
         return subCategoryOptions[nextCategory]?.includes(current.subCategory) ? current.subCategory : "";
       })(),
     }));
+    setFormErrors((current) => ({ ...current, type: undefined, category: undefined, subCategory: undefined }));
   };
 
   const handleCategoryChange = (category: string) => {
@@ -149,6 +218,7 @@ export function AddMenuItemModal({
       category,
       subCategory: nextSubCategories.includes(current.subCategory) ? current.subCategory : "",
     }));
+    setFormErrors((current) => ({ ...current, category: undefined, subCategory: undefined }));
   };
 
   const handleImageChange = async (event: ChangeEvent<HTMLInputElement>) => {
@@ -158,26 +228,33 @@ export function AddMenuItemModal({
     try {
       const dataUrl = await compressImage(file);
       setForm((current) => ({ ...current, imageUrl: dataUrl }));
+      setFormErrors((current) => ({ ...current, imageUrl: undefined }));
+      setSubmitError(null);
     } catch {
       setForm((current) => ({ ...current, imageUrl: "" }));
+      setFormErrors((current) => ({ ...current, imageUrl: "Unable to process the selected image" }));
     }
   };
 
-  const categoryOptions = mealCategoryOptions[form.type];
-
   return (
     <Modal open={open} onClose={onClose} title={isEditing ? "Edit Menu Item" : "Add Menu Item"}>
-      <form onSubmit={submit} className="w-full max-w-[calc(100vw-56px)]">
+      <form onSubmit={submit} noValidate className="w-full max-w-[calc(100vw-56px)]">
         <div className="space-y-4">
           <div>
             <label className="mb-1.5 block text-[11px] text-[#6b665f]">Name</label>
             <Input
               placeholder="Enter Menu Item Name"
               value={form.name}
-              onChange={(e) => setForm({ ...form, name: e.target.value })}
-              className="h-10 rounded-[6px] border-[#ded9d1] bg-[#fafafa] px-3 text-[12px] placeholder:text-[#beb6ac]"
-              required
+              onChange={(e) => {
+                setForm({ ...form, name: e.target.value });
+                setFormErrors((current) => ({ ...current, name: undefined }));
+              }}
+              aria-invalid={Boolean(formErrors.name)}
+              className={`h-10 rounded-[6px] px-3 text-[12px] placeholder:text-[#beb6ac] ${
+                formErrors.name ? "border-[#de6b6b] bg-[#fff7f7]" : "border-[#ded9d1] bg-[#fafafa]"
+              }`}
             />
+            {renderFieldError(formErrors.name)}
           </div>
 
           <div>
@@ -185,16 +262,26 @@ export function AddMenuItemModal({
             <textarea
               placeholder="e.g T-1"
               value={form.description}
-              onChange={(e) => setForm({ ...form, description: e.target.value })}
-              className="min-h-[70px] w-full rounded-[6px] border border-[#ded9d1] bg-[#fafafa] px-3 py-2 text-[12px] text-[#1f1f1f] outline-none transition placeholder:text-[#beb6ac] focus:border-brand-400 focus:bg-white"
-              required
+              onChange={(e) => {
+                setForm({ ...form, description: e.target.value });
+                setFormErrors((current) => ({ ...current, description: undefined }));
+              }}
+              aria-invalid={Boolean(formErrors.description)}
+              className={`min-h-[70px] w-full rounded-[6px] border px-3 py-2 text-[12px] text-[#1f1f1f] outline-none transition placeholder:text-[#beb6ac] focus:border-brand-400 focus:bg-white ${
+                formErrors.description ? "border-[#de6b6b] bg-[#fff7f7]" : "border-[#ded9d1] bg-[#fafafa]"
+              }`}
             />
+            {renderFieldError(formErrors.description)}
           </div>
 
           <div>
             <label className="mb-1.5 block text-[11px] text-[#6b665f]">Upload image *</label>
-            {submitError ? <p className="mb-1 text-[11px] text-[#d65c5c]">{submitError}</p> : null}
-            <div className="flex h-[92px] items-center justify-center rounded-[6px] border border-dashed border-[#e3cfa8] bg-white text-[#8f867d]">
+            {renderFieldError(formErrors.imageUrl)}
+            <div
+              className={`flex h-[120px] items-center justify-center overflow-hidden rounded-[6px] border border-dashed text-[#8f867d] ${
+                formErrors.imageUrl ? "border-[#de6b6b] bg-[#fff7f7]" : "border-[#e3cfa8] bg-white"
+              }`}
+            >
               <input
                 ref={fileInputRef}
                 type="file"
@@ -202,24 +289,31 @@ export function AddMenuItemModal({
                 onChange={(event) => void handleImageChange(event)}
                 className="hidden"
               />
-              <button
-                type="button"
-                className="flex items-center gap-3 text-[13px] text-[#7f7568]"
-                onClick={() => fileInputRef.current?.click()}
-              >
-                <span className="flex h-7 w-7 items-center justify-center   rounded-full border border-[#b7b0a6] text-[22px] ">
-                  +
-                </span>
-                add
-              </button>
+              {form.imageUrl ? (
+                <button
+                  type="button"
+                  className="flex h-full w-full items-center justify-center p-2"
+                  onClick={() => fileInputRef.current?.click()}
+                >
+                  <img
+                    src={form.imageUrl}
+                    alt="Selected menu item"
+                    className="h-full w-full rounded-[4px] object-contain"
+                  />
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  className="flex items-center gap-3 text-[13px] text-[#7f7568]"
+                  onClick={() => fileInputRef.current?.click()}
+                >
+                  <span className="flex h-7 w-7 items-center justify-center rounded-full border border-[#b7b0a6] text-[22px] leading-none">
+                    +
+                  </span>
+                  add
+                </button>
+              )}
             </div>
-            {form.imageUrl ? (
-              <img
-                src={form.imageUrl}
-                alt="Selected menu item"
-                className="mt-2 h-24 w-full rounded-[6px] border border-[#eadfce] object-cover"
-              />
-            ) : null}
           </div>
 
           <div className="grid gap-4 md:grid-cols-2">
@@ -227,21 +321,37 @@ export function AddMenuItemModal({
               <label className="mb-1.5 block text-[11px] text-[#6b665f]">Price</label>
               <Input
                 type="number"
+                min="0"
+                step="1"
                 value={form.price}
-                onChange={(e) => setForm({ ...form, price: Number(e.target.value) })}
-                className="h-10 rounded-[6px] border-[#ded9d1] bg-[#fafafa] px-3 text-[12px]"
-                required
+                onChange={(e) => {
+                  setForm({ ...form, price: e.target.value });
+                  setFormErrors((current) => ({ ...current, price: undefined }));
+                }}
+                aria-invalid={Boolean(formErrors.price)}
+                className={`h-10 rounded-[6px] px-3 text-[12px] ${
+                  formErrors.price ? "border-[#de6b6b] bg-[#fff7f7]" : "border-[#ded9d1] bg-[#fafafa]"
+                }`}
               />
+              {renderFieldError(formErrors.price)}
             </div>
             <div>
               <label className="mb-1.5 block text-[11px] text-[#6b665f]">Prep Time (mins)</label>
               <Input
                 type="number"
+                min="1"
+                step="1"
                 value={form.prepTimeMins}
-                onChange={(e) => setForm({ ...form, prepTimeMins: Number(e.target.value) })}
-                className="h-10 rounded-[6px] border-[#ded9d1] bg-[#fafafa] px-3 text-[12px]"
-                required
+                onChange={(e) => {
+                  setForm({ ...form, prepTimeMins: e.target.value });
+                  setFormErrors((current) => ({ ...current, prepTimeMins: undefined }));
+                }}
+                aria-invalid={Boolean(formErrors.prepTimeMins)}
+                className={`h-10 rounded-[6px] px-3 text-[12px] ${
+                  formErrors.prepTimeMins ? "border-[#de6b6b] bg-[#fff7f7]" : "border-[#ded9d1] bg-[#fafafa]"
+                }`}
               />
+              {renderFieldError(formErrors.prepTimeMins)}
             </div>
           </div>
 
@@ -250,29 +360,72 @@ export function AddMenuItemModal({
               <label className="mb-1.5 block text-[11px] text-[#6b665f]">Type</label>
               <Select
                 value={form.type}
-                onChange={(e) => handleTypeChange(e.target.value as MealType)}
-                className="h-10 rounded-[6px] border-[#ded9d1] bg-[#fafafa] px-3 text-[12px]"
+                onChange={(e) => {
+                  const nextType = e.target.value as MealType;
+                  handleTypeChange(nextType);
+                  setFormErrors((current) => ({ ...current, type: undefined }));
+                }}
+                aria-invalid={Boolean(formErrors.type)}
+                className={`h-10 rounded-[6px] px-3 text-[12px] ${
+                  formErrors.type ? "border-[#de6b6b] bg-[#fff7f7]" : "border-[#ded9d1] bg-[#fafafa]"
+                }`}
               >
+                <option value="">Select Type</option>
                 <option value="BREAKFAST">Breakfast</option>
                 <option value="LUNCH">Lunch</option>
                 <option value="DINNER">Dinner</option>
               </Select>
+              {renderFieldError(formErrors.type)}
             </div>
             <div>
               <label className="mb-1.5 block text-[11px] text-[#6b665f]">Category</label>
               <Select
                 value={form.category}
-                onChange={(e) => handleCategoryChange(e.target.value)}
-                className="h-10 rounded-[6px] border-[#ded9d1] bg-[#fafafa] px-3 text-[12px]"
+                onChange={(e) => {
+                  handleCategoryChange(e.target.value);
+                  setFormErrors((current) => ({ ...current, category: undefined }));
+                }}
+                aria-invalid={Boolean(formErrors.category)}
+                className={`h-10 rounded-[6px] px-3 text-[12px] ${
+                  formErrors.category ? "border-[#de6b6b] bg-[#fff7f7]" : "border-[#ded9d1] bg-[#fafafa]"
+                }`}
+                disabled={!form.type}
               >
+                <option value="">Select Category</option>
                 {categoryOptions.map((category) => (
                   <option key={category} value={category}>
                     {category}
                   </option>
                 ))}
               </Select>
+              {renderFieldError(formErrors.category)}
             </div>
           </div>
+
+          {subCategories.length > 0 ? (
+            <div>
+              <label className="mb-1.5 block text-[11px] text-[#6b665f]">Subcategory</label>
+              <Select
+                value={form.subCategory}
+                onChange={(e) => {
+                  setForm({ ...form, subCategory: e.target.value });
+                  setFormErrors((current) => ({ ...current, subCategory: undefined }));
+                }}
+                aria-invalid={Boolean(formErrors.subCategory)}
+                className={`h-10 rounded-[6px] px-3 text-[12px] ${
+                  formErrors.subCategory ? "border-[#de6b6b] bg-[#fff7f7]" : "border-[#ded9d1] bg-[#fafafa]"
+                }`}
+              >
+                <option value="">Select Subcategory</option>
+                {subCategories.map((subCategory) => (
+                  <option key={subCategory} value={subCategory}>
+                    {subCategory}
+                  </option>
+                ))}
+              </Select>
+              {renderFieldError(formErrors.subCategory)}
+            </div>
+          ) : null}
 
           <div className="flex items-center gap-4 pt-1">
             <button
@@ -330,11 +483,13 @@ export function AddMenuItemModal({
             </Button>
             <Button
               type="submit"
+              disabled={isSubmitting}
               className="h-10 rounded-[6px] border-[#9a742f] bg-[#9a742f] text-[13px] font-medium text-white hover:border-[#866426] hover:bg-[#866426]"
             >
-              {isEditing ? "Save" : "Create"}
+              {isSubmitting ? (isEditing ? "Saving..." : "Creating...") : isEditing ? "Save" : "Create"}
             </Button>
           </div>
+          {submitError ? <p className="text-[11px] text-[#d65c5c]">{submitError}</p> : null}
         </div>
       </form>
     </Modal>

@@ -6,7 +6,7 @@ export type HomeSearchItem = {
   price: number;
   image: string;
   foodType?: "Veg" | "Non Veg";
-  source: "Breakfast" | "Lunch";
+  source: "Breakfast" | "Lunch" | "Dinner";
   category?: string;
   subCategory?: string;
   mealType?: "Breakfast" | "Lunch" | "Dinner";

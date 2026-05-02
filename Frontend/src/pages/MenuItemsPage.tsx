@@ -21,7 +21,6 @@ const frontendLunchDinnerCategories = [
   "Main Course",
   "Appetizer",
   "Roti",
-  "Starters",
   "Rice",
   "Bestseller",
   "Beverages",

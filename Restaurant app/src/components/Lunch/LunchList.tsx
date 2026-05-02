@@ -28,8 +28,11 @@ const LunchList: React.FC<Props> = ({
 const normalizedQuery = searchQuery.trim().toLowerCase();
 
 const filteredItems = useMemo(() => {
+  const sharedCategories = new Set(["Beverages", "Dessert", "Roti"]);
   const lunchMealItems = items.filter(
-    (item) => item.category === "Dessert" || (item.foodType ?? "Veg") === foodType,
+    (item) =>
+      sharedCategories.has(item.category) ||
+      (item.foodType ?? "Veg") === foodType,
   );
 
   const searchFilteredItems = normalizedQuery

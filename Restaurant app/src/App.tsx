@@ -93,9 +93,8 @@ const App: React.FC = () => {
       item.category === 'Main Course' ||
       item.category === 'Appetizer' ||
       item.category === 'Roti' ||
-      item.category === 'Starters' ||
-      item.category === 'Rice' ||
-      item.category === 'All'
+        item.category === 'Rice' ||
+        item.category === 'All'
     ) {
       return item.category;
     }
@@ -152,7 +151,6 @@ const App: React.FC = () => {
       case "Main Course":
       case "Appetizer":
       case "Roti":
-      case "Starters":
       case "Rice":
       case "Dessert":
         return focus;

@@ -10,7 +10,7 @@ export const StarterItems :LunchItem[] = [
     description: 'Grilled Paneer With Smoky Flavors',
     price: 239,
     image: Paneertikka,
-    category: 'Starters',
+    category: 'Appetizer',
     isBestseller: true,
   },
   {
@@ -19,7 +19,7 @@ export const StarterItems :LunchItem[] = [
     description: 'Spiced Veggie Kebabs',
     price: 199,
     image: kabab,
-    category: 'Starters',
+    category: 'Appetizer',
     isBestseller: false,
   },
   {
@@ -28,7 +28,7 @@ export const StarterItems :LunchItem[] = [
     description: 'Crunchy Corn With Spices',
     price: 199,
     image: Crispy,
-    category: 'Starters',
+    category: 'Appetizer',
     isBestseller: false,
   },
   {
@@ -37,7 +37,7 @@ export const StarterItems :LunchItem[] = [
     description: 'Veg-Filled Crispy Rolls',
     price: 199,
     image: springrolls,
-    category: 'Starters',
+    category: 'Appetizer',
     isBestseller: false,
   }
 ];

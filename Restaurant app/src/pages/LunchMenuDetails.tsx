@@ -48,7 +48,6 @@ const LunchMenuDetails: React.FC<Props> = ({
       initialFocus === "Main Course" ||
       initialFocus === "Appetizer" ||
       initialFocus === "Roti" ||
-      initialFocus === "Starters" ||
       initialFocus === "Rice" ||
       initialFocus === "Dessert"
     ) {
@@ -81,8 +80,9 @@ const LunchMenuDetails: React.FC<Props> = ({
 
 const vegTabs: LunchTab[] = [
   "All",
+  "Appetizer",
   "Main Course",
-  "Starters",
+  "Roti",
   "Rice",
   "Bestseller",
   "Beverages",
@@ -91,8 +91,9 @@ const vegTabs: LunchTab[] = [
 
 const nonVegTabs: LunchTab[] = [
   "All",
-  "Main Course",
   "Appetizer",
+  "Main Course",
+  "Roti",
   "Rice",
   "Bestseller",
   "Beverages",
@@ -100,8 +101,7 @@ const nonVegTabs: LunchTab[] = [
 ];
 
 const tabs = foodType === "Non Veg" ? nonVegTabs : vegTabs;
-const resolvedActiveTab =
-  foodType === "Veg" && activeTab === "Appetizer" ? "All" : activeTab;
+const resolvedActiveTab = activeTab;
 
   const handleNavChange = (view: "menu" | "orders" | "track" | "bill") => {
     if (view === "track" && !orderPlaced) {
