@@ -207,7 +207,7 @@ export function AddMenuItemModal({
                 className="flex items-center gap-3 text-[13px] text-[#7f7568]"
                 onClick={() => fileInputRef.current?.click()}
               >
-                <span className="flex h-7 w-7 items-center justify-center rounded-full border border-[#b7b0a6] text-[22px] leading-none">
+                <span className="flex h-7 w-7 items-center justify-center   rounded-full border border-[#b7b0a6] text-[22px] ">
                   +
                 </span>
                 add

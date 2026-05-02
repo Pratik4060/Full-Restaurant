@@ -97,32 +97,32 @@ export function OrderCard({ order }: { order: Order }) {
         <p>Updated: {formatDateTime(order.updatedAt)}</p>
       </div>
 
-      <div className="mt-auto flex flex-col gap-3 pt-5 sm:flex-row sm:gap-4">
-        {primaryNext && (
-          <Button
-            onClick={() => {
-              dispatch(optimisticSetOrderStatus({ id: order.id, status: primaryNext }));
-              void dispatch(updateOrderStatusThunk({ id: order.id, status: primaryNext }));
-            }}
-            style={primaryActionInlineStyle[order.status]}
-            disabled={isUpdating}
-            className={`h-10 w-full whitespace-nowrap rounded-md border text-[12px] font-medium leading-tight shadow-none sm:min-w-[190px] sm:flex-[1.35] sm:px-6 sm:text-[13px] md:min-w-[220px] ${primaryClassName}`}
-          >
-            {isUpdating ? "Updating..." : primaryLabel}
-          </Button>
-        )}
-        {order.status !== "CANCELED" && order.status !== "COMPLETED" && (
-          <Button
-            variant="danger"
-            onClick={() => void dispatch(updateOrderStatusThunk({ id: order.id, status: "CANCELED" }))}
-            style={cancelInlineStyle}
-            disabled={isUpdating}
-            className="h-10 w-full whitespace-nowrap rounded-md border border-[#ffb6b6] bg-white text-[12px] font-medium leading-tight text-[#ff5656] shadow-none hover:bg-[#fff5f5] sm:min-w-[140px] sm:text-[13px]"
-          >
-            Cancel
-          </Button>
-        )}
-      </div>
+<div className="mt-auto flex flex-col gap-3 pt-5 sm:flex-row sm:gap-4 sm:flex-wrap">
+  {primaryNext && (
+    <Button
+      onClick={() => {
+        dispatch(optimisticSetOrderStatus({ id: order.id, status: primaryNext }));
+        void dispatch(updateOrderStatusThunk({ id: order.id, status: primaryNext }));
+      }}
+      style={primaryActionInlineStyle[order.status]}
+      disabled={isUpdating}
+      className={`h-10 w-full whitespace-nowrap rounded-md border text-[12px] font-medium leading-tight shadow-none sm:min-w-[190px] sm:flex-[1.35] sm:px-6 sm:text-[13px] md:min-w-[220px] ${primaryClassName}`}
+    >
+      {isUpdating ? "Updating..." : primaryLabel}
+    </Button>
+  )}
+  {order.status !== "CANCELED" && order.status !== "COMPLETED" && (
+    <Button
+      variant="danger"
+      onClick={() => void dispatch(updateOrderStatusThunk({ id: order.id, status: "CANCELED" }))}
+      style={cancelInlineStyle}
+      disabled={isUpdating}
+      className="h-10 w-full whitespace-nowrap rounded-md border border-[#ffb6b6] bg-white text-[12px] font-medium leading-tight text-[#ff5656] shadow-none hover:bg-[#fff5f5] sm:min-w-[140px] sm:text-[13px]"
+    >
+      Cancel
+    </Button>
+  )}
+</div>
     </div>
   );
 }
