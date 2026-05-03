@@ -35,10 +35,30 @@ export const listOrders = async (status?: OrderStatus, search?: string) => {
 
   const orders = (await prisma.order.findMany({
     where,
-    include: {
+    select: {
+      id: true,
+      orderNumber: true,
+      customerName: true,
+      tableNumber: true,
+      guestCount: true,
+      status: true,
+      totalAmount: true,
+      createdAt: true,
+      updatedAt: true,
       items: {
-        include: {
-          menuItem: true,
+        select: {
+          id: true,
+          orderId: true,
+          menuItemId: true,
+          quantity: true,
+          unitPrice: true,
+          totalPrice: true,
+          menuItem: {
+            select: {
+              id: true,
+              name: true,
+            },
+          },
         },
       },
     },
@@ -125,10 +145,19 @@ export const createOrder = async (payload: CreateOrderInput) => {
 };
 
 export const updateOrderStatus = async (orderId: string, status: OrderStatus) => {
-  const order = await prisma.order.update({
+  const result = await prisma.order.updateMany({
     where: { id: orderId },
     data: { status },
   });
+
+  if (result.count === 0) {
+    throw new Error("Order not found");
+  }
+
   broadcastInvalidation(["orders", "billing", "dashboard"]);
-  return serializeOrder(order);
+  return {
+    id: orderId,
+    status,
+    updatedAt: new Date().toISOString(),
+  };
 };

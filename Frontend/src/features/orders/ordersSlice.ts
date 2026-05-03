@@ -9,7 +9,8 @@ interface OrdersState {
   statusFilter: "ALL" | OrderStatus;
   loading: boolean;
   error: string | null;
-  optimisticStatusById: Record<string, OrderStatus>;
+  pendingStatusById: Record<string, OrderStatus>;
+  rollbackStatusById: Record<string, OrderStatus>;
 }
 
 const ORDERS_CACHE_KEY = "admin-orders-cache";
@@ -20,7 +21,8 @@ const initialState: OrdersState = readCachedJson<OrdersState>(ORDERS_CACHE_KEY, 
   statusFilter: "ALL",
   loading: false,
   error: null,
-  optimisticStatusById: {},
+  pendingStatusById: {},
+  rollbackStatusById: {},
 });
 
 export const fetchOrdersThunk = createAsyncThunk(
@@ -66,14 +68,6 @@ const ordersSlice = createSlice({
     setOrdersStatusFilter(state, action) {
       state.statusFilter = action.payload as "ALL" | OrderStatus;
     },
-    optimisticSetOrderStatus(state, action) {
-      const { id, status } = action.payload as { id: string; status: OrderStatus };
-      const current = state.list.find((o) => o.id === id);
-      if (!current) return;
-
-      state.optimisticStatusById[id] = current.status;
-      current.status = status;
-    },
   },
   extraReducers(builder) {
     builder
@@ -99,8 +93,14 @@ const ordersSlice = createSlice({
         const current = state.list.find((o) => o.id === id);
         if (!current) return;
 
-        state.optimisticStatusById[id] = current.status;
+        if (state.pendingStatusById[id] === undefined) {
+          state.rollbackStatusById[id] = current.status;
+        }
+
+        state.pendingStatusById[id] = status;
         current.status = status;
+        current.updatedAt = new Date().toISOString();
+        writeCachedJson(ORDERS_CACHE_KEY, state);
       })
       .addCase(updateOrderStatusThunk.fulfilled, (state, action) => {
         const idx = state.list.findIndex((o) => o.id === action.payload.id);
@@ -109,26 +109,28 @@ const ordersSlice = createSlice({
           state.list[idx] = {
             ...current,
             ...action.payload,
-            items: action.payload.items?.length ? action.payload.items : current.items,
           };
         }
-        delete state.optimisticStatusById[action.payload.id];
+        delete state.pendingStatusById[action.payload.id];
+        delete state.rollbackStatusById[action.payload.id];
         writeCachedJson(ORDERS_CACHE_KEY, state);
       })
       .addCase(updateOrderStatusThunk.rejected, (state, action) => {
         const { id } = action.meta.arg;
-        const previousStatus = state.optimisticStatusById[id];
+        const previousStatus = state.rollbackStatusById[id];
         if (previousStatus) {
           const current = state.list.find((o) => o.id === id);
           if (current) {
             current.status = previousStatus;
           }
-          delete state.optimisticStatusById[id];
-          writeCachedJson(ORDERS_CACHE_KEY, state);
         }
+        delete state.pendingStatusById[id];
+        delete state.rollbackStatusById[id];
+        state.error = (action.payload as string) ?? "Failed to update order status";
+        writeCachedJson(ORDERS_CACHE_KEY, state);
       });
   },
 });
 
-export const { setOrdersSearch, setOrdersStatusFilter, optimisticSetOrderStatus } = ordersSlice.actions;
+export const { setOrdersSearch, setOrdersStatusFilter } = ordersSlice.actions;
 export default ordersSlice.reducer;

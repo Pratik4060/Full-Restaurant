@@ -1,6 +1,7 @@
 import type{ NextFunction, Request, Response } from "express";
 import {
   getActiveOffers,
+  getDashboardOverview,
   getDashboardCards,
   getOrderStatusDistribution,
   getPopularItems,
@@ -18,6 +19,16 @@ const parsePeriod = (period?: string): RevenuePeriod => {
 export const summary = async (_req: Request, res: Response, next: NextFunction) => {
   try {
     const data = await getDashboardCards();
+    res.json(data);
+  } catch (error) {
+    next(error as Error);
+  }
+};
+
+export const overview = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const period = parsePeriod(req.query.period as string | undefined);
+    const data = await getDashboardOverview(period);
     res.json(data);
   } catch (error) {
     next(error as Error);

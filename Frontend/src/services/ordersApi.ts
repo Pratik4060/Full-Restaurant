@@ -21,7 +21,7 @@ export const ordersApi = {
     return http<Order>("/orders", { method: "POST", body: payload });
   },
   updateStatus(id: string, status: OrderStatus) {
-    return http<Order>(`/orders/${id}/status`, {
+    return http<Pick<Order, "id" | "status" | "updatedAt">>(`/orders/${id}/status`, {
       method: "PATCH",
       body: { status },
     });

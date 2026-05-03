@@ -9,6 +9,14 @@ import type {
 } from "../types/api";
 
 export const dashboardApi = {
+  overview: (period: RevenuePeriod = "weekly") =>
+    http<{
+      summary: DashboardSummary;
+      revenue: RevenueResponse;
+      orderStatus: OrderStatusPoint[];
+      activeOffers: Offer[];
+      popularItems: PopularItemsResponse;
+    }>(`/dashboard/overview?period=${period}`),
   summary: () => http<DashboardSummary>("/dashboard/summary"),
   revenue: (period: RevenuePeriod = "weekly") => http<RevenueResponse>(`/dashboard/revenue?period=${period}`),
   orderStatus: () => http<OrderStatusPoint[]>("/dashboard/order-status"),

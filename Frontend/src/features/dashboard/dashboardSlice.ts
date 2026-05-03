@@ -38,14 +38,8 @@ export const fetchDashboardThunk = createAsyncThunk(
   "dashboard/fetch",
   async (period: RevenuePeriod = "weekly", { rejectWithValue }) => {
   try {
-    const [summary, revenue, orderStatus, activeOffers, popularItems] = await Promise.all([
-      dashboardApi.summary(),
-      dashboardApi.revenue(period),
-      dashboardApi.orderStatus(),
-      dashboardApi.activeOffers(),
-      dashboardApi.popularItems(),
-    ]);
-    return { summary, revenue, orderStatus, activeOffers, popularItems, period };
+    const data = await dashboardApi.overview(period);
+    return { ...data, period };
   } catch (error) {
     return rejectWithValue((error as Error).message);
   }

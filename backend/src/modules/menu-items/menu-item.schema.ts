@@ -1,22 +1,30 @@
 import { DietType, MealType } from "@prisma/client";
 import { z } from "zod";
 
+const booleanFromForm = z
+  .union([z.boolean(), z.string()])
+  .transform((value) =>
+    typeof value === "boolean" ? value : value === "true",
+  );
+
 const baseMenuItemSchema = z.object({
   name: z.string().min(2),
   description: z.string().min(2),
-  imageUrl: z.string({ required_error: "Image is required" }).trim().min(1, "Image is required"),
-  price: z.number().positive(),
-  prepTimeMins: z.number().int().min(1),
+  imageUrl: z
+    .string({ required_error: "Image is required" })
+    .trim()
+    .min(1, "Image is required"),
+  price: z.coerce.number().positive(),
+  prepTimeMins: z.coerce.number().int().min(1),
   type: z.nativeEnum(MealType),
   category: z.string().min(1),
   subCategory: z.string().trim().optional(),
   diet: z.nativeEnum(DietType),
-  isBestseller: z.boolean().optional(),
-  isAvailable: z.boolean().optional()
+  isBestseller: booleanFromForm.optional(),
+  isAvailable: booleanFromForm.optional(),
 });
 
 export const createMenuItemSchema = baseMenuItemSchema;
-
 export const updateMenuItemSchema = baseMenuItemSchema.partial();
 
 export type CreateMenuItemInput = z.infer<typeof createMenuItemSchema>;

@@ -1,6 +1,6 @@
 import { useAppDispatch } from "../../app/hooks";
 import { useAppSelector } from "../../app/hooks";
-import { optimisticSetOrderStatus, updateOrderStatusThunk } from "../../features/orders/ordersSlice";
+import { updateOrderStatusThunk } from "../../features/orders/ordersSlice";
 import type { Order, OrderStatus } from "../../types/api";
 import { StatusBadge } from "../ui/Badge";
 import { Button } from "../ui/Button";
@@ -51,7 +51,7 @@ const formatDateTime = (value: string) =>
 
 export function OrderCard({ order }: { order: Order }) {
   const dispatch = useAppDispatch();
-  const isUpdating = useAppSelector((state) => state.orders.optimisticStatusById[order.id] !== undefined);
+  const isUpdating = useAppSelector((state) => state.orders.pendingStatusById[order.id] !== undefined);
   const primaryNext = nextStatus[order.status];
   const primaryLabel = order.status === "CANCELED" || order.status === "COMPLETED" ? null : primaryActionLabel[order.status] ?? null;
   const primaryClassName = order.status ? primaryActionStyles[order.status] ?? "" : "";
@@ -101,14 +101,13 @@ export function OrderCard({ order }: { order: Order }) {
   {primaryNext && (
     <Button
       onClick={() => {
-        dispatch(optimisticSetOrderStatus({ id: order.id, status: primaryNext }));
         void dispatch(updateOrderStatusThunk({ id: order.id, status: primaryNext }));
       }}
       style={primaryActionInlineStyle[order.status]}
       disabled={isUpdating}
       className={`h-10 w-full whitespace-nowrap rounded-md border text-[12px] font-medium leading-tight shadow-none sm:min-w-[190px] sm:flex-[1.35] sm:px-6 sm:text-[13px] md:min-w-[220px] ${primaryClassName}`}
     >
-      {isUpdating ? "Updating..." : primaryLabel}
+      {primaryLabel}
     </Button>
   )}
   {order.status !== "CANCELED" && order.status !== "COMPLETED" && (

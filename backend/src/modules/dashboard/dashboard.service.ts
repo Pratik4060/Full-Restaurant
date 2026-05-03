@@ -118,17 +118,25 @@ export const getRevenueSeries = async (period: RevenuePeriod) => {
 export const getOrderStatusDistribution = async () => {
   const statuses = [OrderStatus.PENDING, OrderStatus.PREPARING, OrderStatus.READY, OrderStatus.COMPLETED];
 
-  const counts = await Promise.all(
-    statuses.map((status) =>
-      prisma.order.count({
-        where: { status }
-      })
-    )
+  const groupedCounts = await prisma.order.groupBy({
+    by: ["status"],
+    where: {
+      status: {
+        in: statuses,
+      },
+    },
+    _count: {
+      _all: true,
+    },
+  });
+
+  const countsByStatus = new Map(
+    groupedCounts.map((item) => [item.status, item._count._all])
   );
 
-  return statuses.map((status, index) => ({
+  return statuses.map((status) => ({
     status,
-    count: counts[index]
+    count: countsByStatus.get(status) ?? 0
   }));
 };
 
@@ -152,6 +160,13 @@ export const getPopularItems = async () => {
     orderBy: {
       likeCount: "desc",
     },
+    take: 30,
+    select: {
+      id: true,
+      name: true,
+      diet: true,
+      likeCount: true,
+    },
   });
 
   const all = items.map((item) => ({
@@ -165,5 +180,26 @@ export const getPopularItems = async () => {
     veg: all.filter((item) => item.diet === DietType.VEG),
     nonVeg: all.filter((item) => item.diet === DietType.NON_VEG),
     beverages: all.filter((item) => item.diet === DietType.BEVERAGE)
+  };
+};
+
+export const getDashboardOverview = async (period: RevenuePeriod) => {
+  const [summary, revenuePoints, orderStatus, activeOffers, popularItems] = await Promise.all([
+    getDashboardCards(),
+    getRevenueSeries(period),
+    getOrderStatusDistribution(),
+    getActiveOffers(),
+    getPopularItems(),
+  ]);
+
+  return {
+    summary,
+    revenue: {
+      period,
+      points: revenuePoints,
+    },
+    orderStatus,
+    activeOffers,
+    popularItems,
   };
 };

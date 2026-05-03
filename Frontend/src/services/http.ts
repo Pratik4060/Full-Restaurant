@@ -15,18 +15,24 @@ export class ApiError extends Error {
 
 export async function http<T>(
   path: string,
-  options?: { method?: Method; body?: unknown; auth?: boolean }
+  options?: { method?: Method; body?: unknown; auth?: boolean },
 ): Promise<T> {
   const { method = "GET", body, auth = true } = options ?? {};
   const token = tokenStorage.get();
+  const isFormData =
+    typeof FormData !== "undefined" && body instanceof FormData;
 
   const res = await fetch(`${API_BASE_URL}${path}`, {
     method,
     headers: {
-      "Content-Type": "application/json",
+      ...(isFormData ? {} : { "Content-Type": "application/json" }),
       ...(auth && token ? { Authorization: `Bearer ${token}` } : {}),
     },
-    body: body ? JSON.stringify(body) : undefined,
+    body: body
+      ? isFormData
+        ? (body as FormData)
+        : JSON.stringify(body)
+      : undefined,
   });
 
   if (res.status === 204) return undefined as T;
