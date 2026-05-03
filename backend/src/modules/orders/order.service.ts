@@ -1,7 +1,7 @@
 import { OrderStatus } from "@prisma/client";
 import { prisma } from "../../config/prisma.js";
 import type { CreateOrderInput } from "./order.schema.js";
-import { broadcastInvalidation } from "../../realtime/events.js";
+import { broadcastInvalidation, broadcastOrderCreated } from "../../realtime/events.js";
 
 const numberValue = (value: unknown) => Number(value ?? 0);
 const serializeOrder = <T extends { totalAmount: unknown; items?: Array<{ unitPrice: unknown; totalPrice: unknown }> }>(order: T) => ({
@@ -77,17 +77,35 @@ export const createOrder = async (payload: CreateOrderInput) => {
         in: payload.items.map((item: (typeof payload.items)[number]) => item.menuItemId),
       },
     },
+    select: {
+      id: true,
+      price: true,
+    },
   });
 
   if (menuItems.length !== payload.items.length) {
     throw new Error("Some menu items are invalid");
   }
 
-  let customer = await prisma.customer.findFirst({
+  let customer = payload.customerPhone
+    ? await prisma.customer.findFirst({
+        where: { phone: payload.customerPhone },
+      })
+    : null;
+
+  customer ??= await prisma.customer.findFirst({
     where: { name: payload.customerName },
   });
 
-  if (!customer) {
+  if (customer) {
+    customer = await prisma.customer.update({
+      where: { id: customer.id },
+      data: {
+        name: payload.customerName,
+        ...(payload.customerPhone ? { phone: payload.customerPhone } : {}),
+      },
+    });
+  } else {
     customer = await prisma.customer.create({
       data: {
         name: payload.customerName,
@@ -96,16 +114,12 @@ export const createOrder = async (payload: CreateOrderInput) => {
     });
   }
 
-  const totalAmount = payload.items.reduce(
-    (sum: number, requestedItem: (typeof payload.items)[number]) => {
-      const menuItem = menuItems.find(
-        (item: (typeof menuItems)[number]) => item.id === requestedItem.menuItemId
-      );
-      if (!menuItem) return sum;
-      return sum + numberValue(menuItem.price) * requestedItem.quantity;
-    },
-    0
-  );
+  const menuItemById = new Map(menuItems.map((item) => [item.id, item]));
+  const totalAmount = payload.items.reduce((sum: number, requestedItem: (typeof payload.items)[number]) => {
+    const menuItem = menuItemById.get(requestedItem.menuItemId);
+    if (!menuItem) return sum;
+    return sum + numberValue(menuItem.price) * requestedItem.quantity;
+  }, 0);
 
   const orderNumber = await generateOrderNumber();
 
@@ -120,9 +134,7 @@ export const createOrder = async (payload: CreateOrderInput) => {
       totalAmount,
       items: {
         create: payload.items.map((requestedItem: (typeof payload.items)[number]) => {
-          const menuItem = menuItems.find(
-            (item: (typeof menuItems)[number]) => item.id === requestedItem.menuItemId
-          )!;
+          const menuItem = menuItemById.get(requestedItem.menuItemId)!;
           return {
             menuItemId: menuItem.id,
             quantity: requestedItem.quantity,
@@ -132,13 +144,40 @@ export const createOrder = async (payload: CreateOrderInput) => {
         }),
       },
     },
-    include: {
+    select: {
+      id: true,
+      orderNumber: true,
+      customerName: true,
+      tableNumber: true,
+      guestCount: true,
+      status: true,
+      totalAmount: true,
+      createdAt: true,
+      updatedAt: true,
       items: {
-        include: {
-          menuItem: true,
+        select: {
+          id: true,
+          orderId: true,
+          menuItemId: true,
+          quantity: true,
+          unitPrice: true,
+          totalPrice: true,
+          menuItem: {
+            select: {
+              id: true,
+              name: true,
+            },
+          },
         },
       },
     },
+  });
+  broadcastOrderCreated({
+    id: order.id,
+    orderNumber: order.orderNumber,
+    customerName: order.customerName,
+    tableNumber: order.tableNumber,
+    totalAmount: numberValue(order.totalAmount),
   });
   broadcastInvalidation(["orders", "customers", "billing", "dashboard"]);
   return serializeOrder(order);

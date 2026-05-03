@@ -198,7 +198,7 @@ export function AddMenuItemModal({
       subCategory: form.subCategory.trim()
         ? form.subCategory.trim()
         : undefined,
-      diet: form.diet as DietType,
+      diet: form.category === "Beverages" ? "BEVERAGE" as DietType : form.diet as DietType,
       isBestseller: form.isBestseller,
       isAvailable: form.isAvailable,
       image: imageFile,
@@ -254,6 +254,7 @@ export function AddMenuItemModal({
     setForm((current) => ({
       ...current,
       category,
+      diet: category === "Beverages" ? "BEVERAGE" : current.diet === "BEVERAGE" ? "VEG" : current.diet,
       subCategory: nextSubCategories.includes(current.subCategory)
         ? current.subCategory
         : "",
@@ -554,14 +555,14 @@ export function AddMenuItemModal({
               <span
                 className="flex h-5 w-5 items-center justify-center rounded-full border"
                 style={{
-                  borderColor: form.diet === "NON_VEG" ? "#35b935" : "#b7b0a6",
+                  borderColor: form.diet === "NON_VEG" ? "#FF0000" : "#b7b0a6",
                 }}
               >
                 <span
                   className="h-3 w-3 rounded-full"
                   style={{
                     backgroundColor:
-                      form.diet === "NON_VEG" ? "#35b935" : "transparent",
+                      form.diet === "NON_VEG" ? "#FF0000" : "transparent",
                   }}
                 />
               </span>

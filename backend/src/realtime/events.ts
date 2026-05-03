@@ -8,11 +8,20 @@ export type RealtimeEntity =
   | "billing"
   | "dashboard";
 
+export type OrderCreatedNotification = {
+  id: string;
+  orderNumber: string;
+  customerName: string;
+  tableNumber: string;
+  totalAmount: number;
+};
+
 type RealtimeMessage = {
   id: string;
-  type: "connected" | "invalidate";
+  type: "connected" | "invalidate" | "order-created";
   entities: RealtimeEntity[];
   timestamp: string;
+  order?: OrderCreatedNotification;
 };
 
 const clients = new Set<Response>();
@@ -62,5 +71,16 @@ export const broadcastInvalidation = (entities: RealtimeEntity[]) => {
 
   clients.forEach((client) => {
     writeEvent(client, "invalidate", payload);
+  });
+};
+
+export const broadcastOrderCreated = (order: OrderCreatedNotification) => {
+  const payload = {
+    ...createMessage("order-created", ["orders"]),
+    order,
+  };
+
+  clients.forEach((client) => {
+    writeEvent(client, "order-created", payload);
   });
 };

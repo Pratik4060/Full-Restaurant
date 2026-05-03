@@ -189,6 +189,7 @@ const BreakfastDetails: React.FC<Props> = ({ category, userName, onBack, foodTyp
               ariaLabel="Order notifications"
               popupText="Order is ready"
               buttonClassName="flex items-center justify-center"
+              onNotificationClick={() => handleNavChange("track")}
             >
               <img src={bell} className="invert h-8" alt="bell" />
             </ReadyOrderBell>

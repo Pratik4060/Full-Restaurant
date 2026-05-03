@@ -31,7 +31,7 @@ export function useRestaurantCatalog() {
   useEffect(() => {
     let cancelled = false;
 
-    const loadInitial = async () => {
+    const loadCatalog = async () => {
       try {
         const [nextMenuItems, nextOffers] = await Promise.all([
           restaurantApi.listMenuItems(),
@@ -54,10 +54,14 @@ export function useRestaurantCatalog() {
       }
     };
 
-    void loadInitial();
+    void loadCatalog();
+    const refreshTimer = window.setInterval(() => {
+      void loadCatalog();
+    }, 15000);
 
     return () => {
       cancelled = true;
+      window.clearInterval(refreshTimer);
     };
   }, []);
 

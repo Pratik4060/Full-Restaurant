@@ -1,4 +1,4 @@
-export type AppStep = 'scanner' | 'loading' | 'form' | 'home' | 'menu'| 'paymentSuccess';
+export type AppStep = 'scanner' | 'loading' | 'form' | 'home' | 'menu' | 'track' | 'paymentSuccess';
 
 export interface UserData {
   name: string;

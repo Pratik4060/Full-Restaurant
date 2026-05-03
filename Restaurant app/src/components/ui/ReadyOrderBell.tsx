@@ -8,6 +8,7 @@ interface ReadyOrderBellProps {
   buttonClassName?: string;
   popupClassName?: string;
   dotClassName?: string;
+  onNotificationClick?: () => void;
 }
 
 const ReadyOrderBell: React.FC<ReadyOrderBellProps> = ({
@@ -18,6 +19,7 @@ const ReadyOrderBell: React.FC<ReadyOrderBellProps> = ({
   buttonClassName = "",
   popupClassName = "",
   dotClassName = "",
+  onNotificationClick,
 }) => {
   const [isPopupVisible, setIsPopupVisible] = useState(false);
   const hideTimerRef = useRef<number | null>(null);
@@ -50,12 +52,13 @@ const ReadyOrderBell: React.FC<ReadyOrderBellProps> = ({
   };
 
   return (
-    <button
-      type="button"
-      onClick={showPopup}
-      className={`relative ${buttonClassName}`}
-      aria-label={ariaLabel}
-    >
+    <div className="relative">
+      <button
+        type="button"
+        onClick={showPopup}
+        className={`relative ${buttonClassName}`}
+        aria-label={ariaLabel}
+      >
       {children}
 
       {hasNotification ? (
@@ -63,17 +66,29 @@ const ReadyOrderBell: React.FC<ReadyOrderBellProps> = ({
           className={`absolute right-0 top-0 h-2.5 w-2.5 rounded-full bg-[#ff4d4f] ring-2 ring-white ${dotClassName}`}
         />
       ) : null}
+      </button>
 
       {isPopupVisible ? (
         <div
-          className={`absolute right-0 top-12 z-30 min-w-[160px] rounded-2xl border border-orange-200 bg-white px-4 py-3 text-sm font-semibold text-gray-800 shadow-[0_16px_40px_rgba(0,0,0,0.16)] ${popupClassName}`}
-          role="status"
+          className={`absolute right-0 top-12 z-30 min-w-[160px] rounded-2xl border border-orange-200 bg-white px-4 py-3 text-sm font-semibold text-gray-800 shadow-[0_16px_40px_rgba(0,0,0,0.16)] ${
+            onNotificationClick ? "cursor-pointer" : ""
+          } ${popupClassName}`}
+          role={onNotificationClick ? "button" : "status"}
           aria-live="polite"
+          tabIndex={onNotificationClick ? 0 : undefined}
+          onClick={onNotificationClick}
+          onKeyDown={(event) => {
+            if (!onNotificationClick) return;
+            if (event.key === "Enter" || event.key === " ") {
+              event.preventDefault();
+              onNotificationClick();
+            }
+          }}
         >
           {popupText}
         </div>
       ) : null}
-    </button>
+    </div>
   );
 };
 

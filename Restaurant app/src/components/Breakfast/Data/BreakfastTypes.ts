@@ -22,6 +22,7 @@ export interface BreakfastItem {
   category: BreakfastTab;
   subCategory?: SubCategory;
   isBestseller?: boolean;
+  likeCount?: number;
   foodType?: "Veg" | "Non Veg";
   mealType?: "Breakfast" | "Lunch" | "Dinner";
 }

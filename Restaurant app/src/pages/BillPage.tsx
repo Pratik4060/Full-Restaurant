@@ -198,6 +198,7 @@ const BillPage: React.FC<BillPageProps> = ({
           buttonClassName="p-2 hover:bg-gray-100 rounded-full transition-colors flex items-center justify-center"
           popupClassName="right-0"
           dotClassName="right-1 top-1"
+          onNotificationClick={() => onViewChange("track")}
         >
           <img src={bell} alt="bell" className="h-7 w-7 md:h-8 md:w-8 invert" />
         </ReadyOrderBell>

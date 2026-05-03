@@ -9,6 +9,7 @@ import { fetchDashboardThunk } from "./features/dashboard/dashboardSlice";
 import { fetchMenuItemsThunk } from "./features/menu/menuSlice";
 import { fetchOffersThunk } from "./features/offers/offersSlice";
 import { fetchOrdersThunk } from "./features/orders/ordersSlice";
+import { addOrderNotification } from "./features/notifications/notificationsSlice";
 import { API_BASE_URL } from "./config/env";
 import { AppRouter } from "./routes/AppRouter";
 
@@ -19,6 +20,17 @@ type RealtimeEntity =
   | "customers"
   | "billing"
   | "dashboard";
+
+type OrderCreatedPayload = {
+  timestamp?: string;
+  order?: {
+    id: string;
+    orderNumber: string;
+    customerName: string;
+    tableNumber: string;
+    totalAmount: number;
+  };
+};
 
 function AuthSessionListener() {
   const dispatch = useAppDispatch();
@@ -139,6 +151,18 @@ function RealtimeSyncListener() {
       const payload = JSON.parse((event as MessageEvent<string>).data) as { entities?: RealtimeEntity[] };
       (payload.entities ?? []).forEach((entity) => queuedEntitiesRef.current.add(entity));
       queueFlush();
+    });
+
+    eventSource.addEventListener("order-created", (event) => {
+      const payload = JSON.parse((event as MessageEvent<string>).data) as OrderCreatedPayload;
+      if (!payload.order) return;
+
+      dispatch(
+        addOrderNotification({
+          ...payload.order,
+          createdAt: payload.timestamp,
+        })
+      );
     });
 
     return () => {

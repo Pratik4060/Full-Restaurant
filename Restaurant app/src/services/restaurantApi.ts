@@ -30,6 +30,8 @@ export interface PublicOffer {
   discountText: string;
   imageUrl: string | null;
   isActive: boolean;
+  validFrom: string | null;
+  validUntil: string | null;
 }
 
 export interface PublicOrderItem {

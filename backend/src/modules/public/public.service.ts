@@ -1,6 +1,6 @@
 import { DietType, MealType, OrderStatus, PaymentMethod, PaymentStatus, Prisma } from "@prisma/client";
 import { prisma } from "../../config/prisma.js";
-import { broadcastInvalidation } from "../../realtime/events.js";
+import { broadcastInvalidation, broadcastOrderCreated } from "../../realtime/events.js";
 
 const numberValue = (value: unknown) => Number(value ?? 0);
 
@@ -329,6 +329,13 @@ export const createPublicOrder = async (payload: {
     },
   });
 
+  broadcastOrderCreated({
+    id: order.id,
+    orderNumber: order.orderNumber,
+    customerName: order.customerName,
+    tableNumber: order.tableNumber,
+    totalAmount: numberValue(order.totalAmount),
+  });
   broadcastInvalidation(["orders", "customers", "billing", "dashboard"]);
   return serializePublicOrder(order);
 };

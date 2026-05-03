@@ -1,4 +1,3 @@
-import type { HomeOffer } from "../components/home/types";
 import type { FoodType, MealCategory } from "../types";
 import type { BeverageTab, BreakfastItem, BreakfastTab, HealthTab } from "../components/Breakfast/Data";
 import type { LunchItem, LunchTab } from "../components/Lunch/Data";
@@ -28,6 +27,11 @@ const toFoodType = (diet: PublicMenuItem["diet"]): FoodType | undefined => {
   return undefined;
 };
 
+const toApiMealType = (mealType: MealCategory) => {
+  if (mealType === "Breakfast") return "BREAKFAST";
+  return "LUNCH";
+};
+
 const dedupe = <T extends { name: string; category?: string; subCategory?: string; foodType?: string }>(items: T[]) => {
   const map = new Map<string, T>();
   for (const item of items) {
@@ -37,14 +41,15 @@ const dedupe = <T extends { name: string; category?: string; subCategory?: strin
   return [...map.values()];
 };
 
-export const mapOffersToHomeOffers = (offers: PublicOffer[], fallback: HomeOffer[]) => {
-  if (offers.length === 0) return fallback;
-  return offers.map((offer, index) => ({
-    title: offer.title,
-    desc: `${offer.description} ${offer.discountText}`.trim(),
-    img: offer.imageUrl || fallback[index % fallback.length]?.img || "",
-    gradient: gradients[index % gradients.length],
-  }));
+export const mapOffersToHomeOffers = (offers: PublicOffer[], fallbackImages: string[] = []) => {
+  return offers
+    .filter((offer) => offer.isActive)
+    .map((offer, index) => ({
+      title: offer.title,
+      desc: `${offer.description} ${offer.discountText}`.trim(),
+      img: offer.imageUrl || fallbackImages[index % fallbackImages.length] || "",
+      gradient: gradients[index % gradients.length],
+    }));
 };
 
 export const mapPublicBreakfastItems = (items: PublicMenuItem[]): BreakfastItem[] =>
@@ -69,15 +74,18 @@ export const mapPublicBreakfastItems = (items: PublicMenuItem[]): BreakfastItem[
         ) as BreakfastTab,
         subCategory: item.subCategory as BeverageTab | HealthTab | undefined,
         isBestseller: item.isBestseller,
+        likeCount: item.likeCount,
         foodType: toFoodType(item.diet),
         mealType: "Breakfast" as MealCategory,
       }))
   );
 
-export const mapPublicLunchItems = (items: PublicMenuItem[], mealType: MealCategory): LunchItem[] =>
-  dedupe(
+export const mapPublicLunchItems = (items: PublicMenuItem[], mealType: MealCategory): LunchItem[] => {
+  const apiMealType = toApiMealType(mealType);
+
+  return dedupe(
     items
-      .filter((item) => item.type === "LUNCH" || item.type === "DINNER" || item.category === "Beverages")
+      .filter((item) => item.type === apiMealType || item.category === "Beverages")
       .map((item) => ({
         id: item.id,
         menuItemId: item.id,
@@ -94,7 +102,9 @@ export const mapPublicLunchItems = (items: PublicMenuItem[], mealType: MealCateg
         ) as LunchTab,
         subCategory: item.subCategory as BeverageTab | undefined,
         isBestseller: item.isBestseller,
+        likeCount: item.likeCount,
         foodType: toFoodType(item.diet),
         mealType,
       }))
   );
+};

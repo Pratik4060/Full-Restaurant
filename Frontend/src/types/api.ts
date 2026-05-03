@@ -215,6 +215,7 @@ export interface UserRow {
   role: UserRole;
   created: string;
   status: boolean;
+  source: "APP_USER" | "ADMIN";
 }
 
 export interface UsersTableResponse {

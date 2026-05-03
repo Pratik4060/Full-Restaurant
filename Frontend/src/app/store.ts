@@ -7,6 +7,7 @@ import menuReducer from "../features/menu/menuSlice";
 import offersReducer from "../features/offers/offersSlice";
 import ordersReducer from "../features/orders/ordersSlice";
 import usersReducer from "../features/users/usersSlice";
+import notificationsReducer from "../features/notifications/notificationsSlice";
 
 export const store = configureStore({
   reducer: {
@@ -18,6 +19,7 @@ export const store = configureStore({
     orders: ordersReducer,
     menu: menuReducer,
     offers: offersReducer,
+    notifications: notificationsReducer,
   },
 });
 

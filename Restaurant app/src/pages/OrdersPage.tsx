@@ -5,8 +5,10 @@ import OrderCard from '../components/Ordercard';
 import BottomNav from '../components/BottomNav';
 import back from "../assets/back.svg";
 import search from "../assets/search.svg";
+import microphone from "../assets/microphone.svg";
 import Ruppes from '../assets/Ruppes.svg';
 import bell1 from '../assets/bell1.svg'
+import ReadyOrderBell from '../components/ui/ReadyOrderBell';
 
 interface OrderPageProps {
   onBack: () => void;
@@ -15,8 +17,9 @@ interface OrderPageProps {
 }
 
 const OrderPage: React.FC<OrderPageProps> = ({ onBack, onConfirmOrder, onViewChange }) => {
-  const { orderItems, updateQuantity, removeItem, getTotalPrice } = useOrder();
+  const { orderItems, updateQuantity, removeItem, getTotalPrice, hasReadyOrderNotification } = useOrder();
   const [searchQuery, setSearchQuery] = useState('');
+  const [isListening, setIsListening] = useState(false);
   const [isConfirming, setIsConfirming] = useState(false);
   
   // Filter order items based on search query
@@ -58,6 +61,30 @@ const OrderPage: React.FC<OrderPageProps> = ({ onBack, onConfirmOrder, onViewCha
     }
   };
 
+  const startVoiceSearch = () => {
+    const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+
+    if (!SpeechRecognition) {
+      alert("Your browser does not support voice search. Please use Google Chrome.");
+      return;
+    }
+
+    const recognition = new SpeechRecognition();
+    recognition.lang = 'en-US';
+    recognition.continuous = false;
+    recognition.interimResults = false;
+
+    recognition.onstart = () => setIsListening(true);
+    recognition.onend = () => setIsListening(false);
+    recognition.onerror = () => setIsListening(false);
+    recognition.onresult = (event: any) => {
+      const transcript = event.results[0][0].transcript;
+      setSearchQuery(transcript);
+    };
+
+    recognition.start();
+  };
+
   if (orderItems.length === 0) {
     return (
       <div className="min-h-screen bg-white flex flex-col">
@@ -68,11 +95,15 @@ const OrderPage: React.FC<OrderPageProps> = ({ onBack, onConfirmOrder, onViewCha
               <img src={back} alt="back" />
             </button>
             <div className="flex gap-3">
-              <div className="relative">
-                <button className="text-xl">
-                  <img src={bell1} alt="bell" />
-                </button>
-              </div>
+              <ReadyOrderBell
+                hasNotification={hasReadyOrderNotification}
+                ariaLabel="Order notifications"
+                popupText="Order is ready"
+                buttonClassName="flex items-center justify-center text-xl"
+                onNotificationClick={() => onViewChange('track')}
+              >
+                <img src={bell1} alt="bell" />
+              </ReadyOrderBell>
             </div>
           </div>
 
@@ -91,9 +122,24 @@ const OrderPage: React.FC<OrderPageProps> = ({ onBack, onConfirmOrder, onViewCha
                 type="text"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Search your order"
-                className="w-full border-b py-2 pl-10 pr-10 text-sm focus:outline-none focus:border-orange-400"
+                placeholder={isListening ? "Listening..." : "Search your order"}
+                className={`w-full border-b py-2 pl-10 pr-10 text-sm focus:outline-none focus:border-orange-400 ${isListening ? 'border-orange-500 bg-orange-50' : ''}`}
               />
+              <button
+                type="button"
+                onClick={startVoiceSearch}
+                className="absolute right-3 top-1/2 -translate-y-1/2 p-1 rounded-full overflow-hidden"
+                aria-label="Voice search"
+              >
+                <img
+                  src={microphone}
+                  alt="microphone"
+                  className={`w-4 h-4 transition-transform ${isListening ? 'scale-125 animate-bounce' : ''}`}
+                />
+                {isListening && (
+                  <div className="absolute inset-0 bg-orange-200 animate-ping opacity-30 rounded-full"></div>
+                )}
+              </button>
             </div>
           </div>
         </div>
@@ -124,11 +170,15 @@ const OrderPage: React.FC<OrderPageProps> = ({ onBack, onConfirmOrder, onViewCha
             <img src={back} alt="back" />
           </button>
           <div className="flex gap-3">
-            <div className="relative">
-              <button className="text-xl">
-                <img src={bell1} alt="bell" />
-              </button>
-            </div>
+            <ReadyOrderBell
+              hasNotification={hasReadyOrderNotification}
+              ariaLabel="Order notifications"
+              popupText="Order is ready"
+              buttonClassName="flex items-center justify-center text-xl"
+              onNotificationClick={() => onViewChange('track')}
+            >
+              <img src={bell1} alt="bell" />
+            </ReadyOrderBell>
           </div>
         </div>
 
@@ -147,9 +197,24 @@ const OrderPage: React.FC<OrderPageProps> = ({ onBack, onConfirmOrder, onViewCha
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Search your order..."
-              className="w-full montserrat py-3 pl-10 pr-10 text-sm focus:outline-none placeholder:text-gray-400"
+              placeholder={isListening ? "Listening..." : "Search your order..."}
+              className={`w-full montserrat py-3 pl-10 pr-10 text-sm focus:outline-none placeholder:text-gray-400 ${isListening ? 'bg-orange-50' : ''}`}
             />
+            <button
+              type="button"
+              onClick={startVoiceSearch}
+              className="absolute right-3 top-1/2 -translate-y-1/2 p-1 rounded-full overflow-hidden"
+              aria-label="Voice search"
+            >
+              <img
+                src={microphone}
+                alt="microphone"
+                className={`w-4 h-4 transition-transform ${isListening ? 'scale-125 animate-bounce' : ''}`}
+              />
+              {isListening && (
+                <div className="absolute inset-0 bg-orange-200 animate-ping opacity-30 rounded-full"></div>
+              )}
+            </button>
           </div>
         </div>
 

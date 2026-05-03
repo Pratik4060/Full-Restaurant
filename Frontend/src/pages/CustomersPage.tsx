@@ -182,7 +182,7 @@ export function CustomersPage() {
 
         <div className="mt-4 max-w-full overflow-hidden rounded-[6px] border border-[#d6dce3]">
           <div className="max-w-full overflow-x-auto">
-            <table className="min-w-[980px] border-collapse text-left">
+            <table className="w-full min-w-[980px] border-collapse text-left">
               <thead className="bg-[#f7f8fb] text-[12px] font-medium text-[#2a2a2a]">
                 <tr>
                   <th className="w-14 border-b border-r border-[#d6dce3] px-4 py-4">

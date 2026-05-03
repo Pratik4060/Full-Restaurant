@@ -14,7 +14,7 @@ import HomeInfoModal from '../components/home/HomeInfoModal';
 import HomeMealHero from '../components/home/HomeMealHero';
 import HomeOfferCarousel from '../components/home/HomeOfferCarousel';
 import HomeSearchPanel from '../components/home/HomeSearchPanel';
-import type { HomeOffer, HomeSearchItem } from '../components/home/types';
+import type { HomeSearchItem } from '../components/home/types';
 import { useRestaurantCatalog } from '../hooks/useRestaurantCatalog';
 import { mapOffersToHomeOffers, mapPublicBreakfastItems, mapPublicLunchItems } from '../lib/catalog';
 
@@ -28,34 +28,10 @@ interface HomePageProps {
     focus: 'all' | 'quick-bites' | 'beverages';
   }) => void;
   onSearchSelect: (item: HomeSearchItem) => void;
+  onReadyOrderClick?: () => void;
 }
 
-const OFFERS: HomeOffer[] = [
-  {
-    title: 'Flat Discount',
-    desc: 'Get 20% OFF on your total bill. Valid on orders above Rs. 299',
-    img: sandwhich,
-    gradient: 'linear-gradient(117.14deg, #785641 5.65%, #5F0404 96.69%)',
-  },
-  {
-    title: 'Combo Offer',
-    desc: 'Buy 1 Get 1 Free on Breakfast items. Limited time only.',
-    img: combo,
-    gradient: 'linear-gradient(114.35deg, #2A460D 0.77%, #666666 97.98%)',
-  },
-  {
-    title: 'Quick Bite Deal',
-    desc: 'Flat Rs. 50 OFF on Quick Bites. On orders above Rs. 199',
-    img: bite,
-    gradient: 'linear-gradient(115.74deg, #970808 4.97%, #053F62 100%)',
-  },
-  {
-    title: 'Free Add-on',
-    desc: 'Free Fresh Juice on orders above Rs. 399. Auto applied at checkout',
-    img: freeadd,
-    gradient: 'linear-gradient(115.68deg, #446B83 1.81%, #116848 100%)',
-  },
-];
+const OFFER_FALLBACK_IMAGES = [sandwhich, combo, bite, freeadd];
 
 const VEG_MEAL_DATA: { category: MealCategory; img: string; background: string }[] = [
   { category: 'Breakfast', img: Breakfast, background: 'linear-gradient(160.72deg, rgba(184, 194, 177, 0.2) 31.81%, rgba(59, 105, 6, 0.2) 62.84%, rgba(181, 113, 22, 0.2) 95.75%)' },
@@ -83,6 +59,7 @@ const HomePage: React.FC<HomePageProps> = ({
   onMostPopularSelect,
   onOfferSelect,
   onSearchSelect,
+  onReadyOrderClick,
 }) => {
   const { menuItems, offers } = useRestaurantCatalog();
   const [currentOffer, setCurrentOffer] = useState(0);
@@ -96,9 +73,9 @@ const HomePage: React.FC<HomePageProps> = ({
   const publicBreakfastItems = useMemo(() => mapPublicBreakfastItems(menuItems), [menuItems]);
   const publicLunchItems = useMemo(() => mapPublicLunchItems(menuItems, "Lunch"), [menuItems]);
   const publicDinnerItems = useMemo(() => mapPublicLunchItems(menuItems, "Dinner"), [menuItems]);
-  const mergedOffers = useMemo(() => mapOffersToHomeOffers(offers, OFFERS), [offers]);
+  const mergedOffers = useMemo(() => mapOffersToHomeOffers(offers, OFFER_FALLBACK_IMAGES), [offers]);
   const activeOfferIndex = mergedOffers.length > 0 ? currentOffer % mergedOffers.length : 0;
-  const activeOffer = mergedOffers[activeOfferIndex] ?? OFFERS[activeOfferIndex % OFFERS.length];
+  const activeOffer = mergedOffers[activeOfferIndex] ?? null;
 
   const allSearchItems = useMemo<HomeSearchItem[]>(
     () => {
@@ -163,7 +140,9 @@ const HomePage: React.FC<HomePageProps> = ({
   }, []);
 
   useEffect(() => {
-    const offerCount = mergedOffers.length || OFFERS.length;
+    const offerCount = mergedOffers.length;
+    if (offerCount === 0) return;
+
     const timer = setInterval(
       () => setCurrentOffer((prev) => (prev + 1) % offerCount),
       4000,
@@ -182,6 +161,8 @@ const HomePage: React.FC<HomePageProps> = ({
   }, [activeMealData.length]);
 
   const handleOfferOrderNow = () => {
+    if (!activeOffer) return;
+
     const selectedOfferTitle = activeOffer.title;
     if (selectedOfferTitle === 'Flat Discount') return onOfferSelect({ category: currentMeal.category, focus: 'all' });
     if (selectedOfferTitle === 'Combo Offer') return onOfferSelect({ category: 'Breakfast', focus: 'all' });
@@ -200,6 +181,7 @@ const HomePage: React.FC<HomePageProps> = ({
           onOfferChange={setCurrentOffer}
           onInfoOpen={() => setShowInfoModal(true)}
           onOrderNow={handleOfferOrderNow}
+          onReadyOrderClick={onReadyOrderClick}
         >
           <HomeSearchPanel
             searchQuery={searchQuery}

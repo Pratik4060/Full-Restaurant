@@ -31,7 +31,7 @@ const roleTone: Record<UserRole, string> = {
   WAITER: "bg-[#d7f3ff] text-[#0d87bf]",
 };
 
-const roleOptions: UserRole[] = ["ADMIN", "MANAGER", "KITCHEN", "CASHIER", "WAITER"];
+const staffRoleOptions: UserRole[] = ["MANAGER", "KITCHEN", "CASHIER", "WAITER"];
 const sanitizeNameInput = (value: string) => value.replace(/[^a-zA-Z\s]/g, "");
 
 type UserFormState = {
@@ -80,6 +80,8 @@ const validateUserForm = (form: UserFormState, editingUser: UserRow | null): Use
 
   return errors;
 };
+
+const isAdminAccountRow = (row: UserRow) => row.source === "ADMIN";
 
 const formatDate = (value: string) =>
   new Intl.DateTimeFormat("en-GB", { day: "2-digit", month: "2-digit", year: "numeric" }).format(new Date(value));
@@ -145,10 +147,12 @@ export function UsersPage() {
     );
   }, [dispatch, pagination.limit, pagination.page, search]);
 
+  const selectableRows = rows;
   const visibleSelectedIds = useMemo(
-    () => selectedIds.filter((id) => rows.some((row) => row.id === id)),
-    [rows, selectedIds]
+    () => selectedIds.filter((id) => selectableRows.some((row) => row.id === id)),
+    [selectableRows, selectedIds]
   );
+  const allSelectableRowsSelected = selectableRows.length > 0 && selectableRows.every((row) => visibleSelectedIds.includes(row.id));
 
   const openCreate = () => {
     setEditingUser(null);
@@ -192,16 +196,23 @@ export function UsersPage() {
     }
 
     if (editingUser) {
+      const editingAdminAccount = isAdminAccountRow(editingUser);
       await dispatch(
         updateUserThunk({
           id: editingUser.id,
-          data: {
-            name: form.name,
-            email: form.email,
-            role: form.role,
-            isActive: form.isActive,
-            ...(form.password ? { password: form.password } : {}),
-          },
+          data: editingAdminAccount
+            ? {
+                name: form.name,
+                email: form.email,
+                ...(form.password ? { password: form.password } : {}),
+              }
+            : {
+                name: form.name,
+                email: form.email,
+                role: form.role,
+                isActive: form.isActive,
+                ...(form.password ? { password: form.password } : {}),
+              },
         })
       );
     } else {
@@ -254,6 +265,8 @@ export function UsersPage() {
     const end = Math.min(start + rows.length - 1, pagination.total);
     return `Showing ${start}-${end} Out of ${pagination.total}`;
   }, [pagination.limit, pagination.page, pagination.total, rows.length]);
+  const editingAdminAccount = editingUser ? isAdminAccountRow(editingUser) : false;
+  const roleOptions: UserRole[] = editingAdminAccount ? ["ADMIN"] : staffRoleOptions;
 
   return (
     <div className="space-y-5">
@@ -306,11 +319,12 @@ export function UsersPage() {
                   <TableHeaderCell checkbox className="w-[48px] px-2">
                     <input
                       type="checkbox"
-                      checked={rows.length > 0 && rows.every((row) => visibleSelectedIds.includes(row.id))}
+                      disabled={selectableRows.length === 0}
+                      checked={allSelectableRowsSelected}
                       onChange={() =>
-                        setSelectedIds(rows.every((row) => selectedIds.includes(row.id)) ? [] : rows.map((row) => row.id))
+                        setSelectedIds(allSelectableRowsSelected ? [] : selectableRows.map((row) => row.id))
                       }
-                      className="h-5 w-5 rounded-[4px] border-[#8e9bb0] text-[#2f4b6a]"
+                      className="h-5 w-5 rounded-[4px] border-[#8e9bb0] text-[#2f4b6a] disabled:cursor-not-allowed disabled:opacity-50"
                     />
                   </TableHeaderCell>
                   <TableHeaderCell className="w-[255px]">User</TableHeaderCell>
@@ -324,6 +338,7 @@ export function UsersPage() {
               <tbody className="bg-white text-[13px] text-[#2b2b2b]">
                 {rows.map((row, index) => {
                   const rowNumber = (pagination.page - 1) * pagination.limit + index + 1;
+                  const isAdminAccount = isAdminAccountRow(row);
 
                   return (
                     <tr key={row.id} className="h-[58px] transition hover:bg-[#fcfcfd]">
@@ -346,7 +361,7 @@ export function UsersPage() {
                           className="text-left leading-5 transition hover:opacity-80"
                         >
                           <p className="text-[14px] font-medium text-[#262626]">{row.user}</p>
-                          <p className="text-[12px] text-[#8d8880]">ID: {rowNumber}</p>
+                          {isAdminAccount ? null : <p className="text-[12px] text-[#8d8880]">ID: {rowNumber}</p>}
                         </button>
                       </td>
                       <td className="border-b border-r border-[#d8dce2] px-4 py-3 text-[#2f2f2f]">{row.email}</td>
@@ -358,6 +373,7 @@ export function UsersPage() {
                         <div className="flex items-center justify-start">
                           <Switch
                             checked={row.status}
+                            disabled={isAdminAccount}
                             onChange={(checked) => void dispatch(updateUserStatusThunk({ id: row.id, isActive: checked }))}
                           />
                         </div>
@@ -481,7 +497,11 @@ export function UsersPage() {
           </div>
           <div className="space-y-2">
             <label className="text-[12px] font-medium text-[#5f5a53]">Role</label>
-            <Select value={form.role} onChange={(event) => setForm({ ...form, role: event.target.value as UserRole })}>
+            <Select
+              value={form.role}
+              disabled={editingAdminAccount}
+              onChange={(event) => setForm({ ...form, role: event.target.value as UserRole })}
+            >
               {roleOptions.map((role) => (
                 <option key={role} value={role}>
                   {role}
@@ -492,9 +512,15 @@ export function UsersPage() {
           <div className="md:col-span-2 flex items-center justify-between rounded-2xl border border-[#ece3d7] bg-[#fbfaf8] px-4 py-3">
             <div>
               <p className="text-[13px] font-medium text-[#2f2b26]">Account status</p>
-              <p className="text-[12px] text-[#7e786f]">Disable access without deleting the user.</p>
+              <p className="text-[12px] text-[#7e786f]">
+                {editingAdminAccount ? "This account stays active." : "Disable access without deleting the user."}
+              </p>
             </div>
-            <Switch checked={form.isActive} onChange={(checked) => setForm({ ...form, isActive: checked })} />
+            <Switch
+              checked={form.isActive}
+              disabled={editingAdminAccount}
+              onChange={(checked) => setForm({ ...form, isActive: checked })}
+            />
           </div>
         </div>
 

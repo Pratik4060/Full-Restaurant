@@ -22,7 +22,7 @@ const getTableNumberFromUrl = (): string => {
 };
 
 const App: React.FC = () => {
-  const { clearOrder, resetPlacedOrder, markOrderPaid } = useOrder();
+  const { clearOrder, resetPlacedOrder, markOrderPaid, orderPlaced, orderNumber } = useOrder();
   const params = new URLSearchParams(window.location.search);
 
   const isPaymentSuccess = params.get('payment') === 'success';
@@ -249,6 +249,38 @@ const App: React.FC = () => {
             setStep('menu');
           }}
           onSearchSelect={handleSearchSelect}
+          onReadyOrderClick={() => setStep('track')}
+        />
+      )}
+
+      {step === 'track' && (
+        <TrackOrderPage
+          onBack={() => setStep('home')}
+          onViewChange={(view) => {
+            if (view === 'track') {
+              setStep('track');
+              return;
+            }
+
+            if (view === 'menu') {
+              setMenuEntryPoint('default');
+              setStep('menu');
+              return;
+            }
+
+            if (view === 'orders') {
+              setMenuEntryPoint('default');
+              setStep('menu');
+              return;
+            }
+
+            if (view === 'bill') {
+              setStep('track');
+            }
+          }}
+          orderPlaced={orderPlaced}
+          orderNumber={orderNumber}
+          estimatedTime="15-20"
         />
       )}
 

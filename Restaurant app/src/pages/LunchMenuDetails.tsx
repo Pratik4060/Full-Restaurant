@@ -244,6 +244,7 @@ const resolvedActiveTab = activeTab;
             ariaLabel="Order notifications"
             popupText="Order is ready"
             buttonClassName="flex items-center justify-center"
+            onNotificationClick={() => handleNavChange("track")}
           >
             <img src={bell} className="invert h-8" alt="notifications" />
           </ReadyOrderBell>

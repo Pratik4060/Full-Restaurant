@@ -29,6 +29,7 @@ export interface LunchItem {
   category: LunchTab;
   subCategory?: SubCategory;
   isBestseller?: boolean;
+  likeCount?: number;
   foodType?: "Veg" | "Non Veg";
   mealType?: "Breakfast" | "Lunch" | "Dinner";
 }

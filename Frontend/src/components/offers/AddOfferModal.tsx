@@ -276,7 +276,7 @@ export function AddOfferModal({
             </div>
             <div>
               <label className="mb-1.5 block text-[11px] text-[#6b665f]">
-                Discount %
+                Discount 
               </label>
               <Input
                 type="number"

@@ -3,6 +3,19 @@ import React, { useMemo } from 'react';
 import { type BeverageTab, type HealthTab, type BreakfastTab, type BreakfastItem } from './Data';
 import MenuCard from '../MenuCard';
 import type {FoodType} from "../../types"
+
+const getMostLikedItems = <T extends { likeCount?: number; isBestseller?: boolean }>(items: T[]) => {
+  const likedItems = items.filter((item) => (item.likeCount ?? 0) > 0);
+
+  if (likedItems.length > 0) {
+    return likedItems
+      .sort((a, b) => (b.likeCount ?? 0) - (a.likeCount ?? 0))
+      .slice(0, 3);
+  }
+
+  return items.filter((item) => item.isBestseller).slice(0, 3);
+};
+
 interface Props {
   activeTab: BreakfastTab;
   activeBeverageTab: BeverageTab;
@@ -44,7 +57,7 @@ const filteredItems = useMemo(() => {
   }
 
   if (activeTab === "Bestseller") {
-    return searchFilteredItems.filter((item) => item.isBestseller);
+    return getMostLikedItems(searchFilteredItems);
   }
 
   if (activeTab === "Beverages") {

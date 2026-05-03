@@ -164,6 +164,7 @@ export const getPopularItems = async () => {
     select: {
       id: true,
       name: true,
+      category: true,
       diet: true,
       likeCount: true,
     },
@@ -172,14 +173,18 @@ export const getPopularItems = async () => {
   const all = items.map((item) => ({
     menuItemId: item.id,
     name: item.name,
+    category: item.category,
     diet: item.diet,
     likes: item.likeCount,
   }));
 
+  const isBeverage = (item: (typeof all)[number]) =>
+    item.category === "Beverages" || item.diet === DietType.BEVERAGE;
+
   return {
-    veg: all.filter((item) => item.diet === DietType.VEG),
-    nonVeg: all.filter((item) => item.diet === DietType.NON_VEG),
-    beverages: all.filter((item) => item.diet === DietType.BEVERAGE)
+    veg: all.filter((item) => item.diet === DietType.VEG && !isBeverage(item)),
+    nonVeg: all.filter((item) => item.diet === DietType.NON_VEG && !isBeverage(item)),
+    beverages: all.filter(isBeverage)
   };
 };
 

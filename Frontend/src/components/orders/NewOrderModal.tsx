@@ -31,14 +31,18 @@ export function NewOrderModal({ open, onClose }: { open: boolean; onClose: () =>
   const draftRefs = useRef<Record<string, HTMLDivElement | null>>({});
 
   const [customerName, setCustomerName] = useState("");
+  const [customerPhone, setCustomerPhone] = useState("");
   const [tableNumber, setTableNumber] = useState("");
   const [drafts, setDrafts] = useState<OrderItemDraft[]>([newDraft()]);
+  const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
     if (!open) return;
     setCustomerName("");
+    setCustomerPhone("");
     setTableNumber("");
     setDrafts([newDraft()]);
+    setSubmitting(false);
   }, [open]);
 
   useEffect(() => {
@@ -93,22 +97,31 @@ export function NewOrderModal({ open, onClose }: { open: boolean; onClose: () =>
 
   const submit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    if (submitting) return;
+
+    const phone = customerPhone.trim();
     const items = drafts
       .filter((draft) => draft.menuItemId && draft.quantity > 0)
       .map((draft) => ({ menuItemId: draft.menuItemId, quantity: draft.quantity }));
 
     if (!customerName.trim() || !tableNumber.trim() || items.length === 0) return;
 
-    await dispatch(
-      createOrderThunk({
-        customerName,
-        tableNumber,
-        guestCount: 1,
-        items,
-      }),
-    );
+    setSubmitting(true);
+    try {
+      await dispatch(
+        createOrderThunk({
+          customerName,
+          ...(phone ? { customerPhone: phone } : {}),
+          tableNumber,
+          guestCount: 1,
+          items,
+        }),
+      ).unwrap();
 
-    onClose();
+      onClose();
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   return (
@@ -123,6 +136,17 @@ export function NewOrderModal({ open, onClose }: { open: boolean; onClose: () =>
               placeholder="Enter Customer Name"
               className="h-9 rounded-[6px] border-[#ded4c8] bg-[#f7f7f7] px-3 text-[12px] placeholder:text-[#b4ada6]"
               required
+            />
+          </div>
+          <div>
+            <label className="mb-2 block text-[12px] font-medium text-[#2d2721]">Mobile Number</label>
+            <Input
+              value={customerPhone}
+              onChange={(e) => setCustomerPhone(e.target.value.replace(/\D/g, "").slice(0, 10))}
+              placeholder="Enter Mobile Number"
+              inputMode="numeric"
+              pattern="[0-9]{10}"
+              className="h-9 rounded-[6px] border-[#ded4c8] bg-[#f7f7f7] px-3 text-[12px] placeholder:text-[#b4ada6]"
             />
           </div>
           <div>
@@ -141,6 +165,7 @@ export function NewOrderModal({ open, onClose }: { open: boolean; onClose: () =>
           <button
             type="button"
             onClick={addDraft}
+            disabled={submitting}
             className="inline-flex items-center gap-2 text-[13px] font-medium text-[#c79d67] transition hover:text-[#ad7d41]"
           >
             <span>Add Item</span>
@@ -215,6 +240,7 @@ export function NewOrderModal({ open, onClose }: { open: boolean; onClose: () =>
                   <button
                     type="button"
                     onClick={() => removeDraft(draft.id)}
+                    disabled={submitting}
                     className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-[#ffb1b1] text-[18px] leading-none text-[#ff4f4f] transition hover:bg-[#fff5f5] md:mb-[1px]"
                     aria-label={`Remove item ${index + 1}`}
                   >
@@ -233,15 +259,17 @@ export function NewOrderModal({ open, onClose }: { open: boolean; onClose: () =>
             type="button"
             variant="secondary"
             className="h-10 rounded-[8px] border-[#efc98f] bg-white text-[14px] font-medium text-[#c79d67] hover:bg-[#fffaf2]"
+            disabled={submitting}
             onClick={onClose}
           >
             Cancel
           </Button>
           <Button
             type="submit"
-            className="h-10 rounded-[8px] border-[#9a742f] bg-[#9a742f] text-[14px] font-medium text-white hover:border-[#866426] hover:bg-[#866426]"
+            disabled={submitting}
+            className="h-10 rounded-[8px] border-[#9a742f] bg-[#9a742f] text-[14px] font-medium text-white hover:border-[#866426] hover:bg-[#866426] disabled:cursor-wait disabled:opacity-75"
           >
-            Create Order
+            {submitting ? "Creating..." : "Create Order"}
           </Button>
         </div>
       </form>
