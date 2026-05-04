@@ -74,9 +74,11 @@ const HomeSearchPanel: React.FC<HomeSearchPanelProps> = ({
         
         {/* Voice Button */}
         <button 
+          type="button"
           onClick={onVoiceClick}
           className={`relative ml-2 p-2 rounded-full transition-all ${isListening ? 'bg-orange-100' : 'hover:bg-gray-100'}`}
           title="Voice Search"
+          aria-label="Voice search"
         >
           <img 
             src={voice} 

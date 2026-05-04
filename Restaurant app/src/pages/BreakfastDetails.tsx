@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState } from 'react';
 import { useOrder } from '../contexts/OrderContext';
 import CategoryTabs from '../components/CategoryTabs';
 import MenuList from '../components/Breakfast/BreakfastList';
@@ -15,6 +15,7 @@ import microphone from "../assets/microphone.svg"
 import type { MealCategory } from '../types';
 import BillPage from "./BillPage";
 import { useRestaurantCatalog } from '../hooks/useRestaurantCatalog';
+import { useVoiceRecognition } from '../hooks/useVoiceRecognition';
 import { mapPublicBreakfastItems } from '../lib/catalog';
 
 interface Props {
@@ -45,38 +46,12 @@ const BreakfastDetails: React.FC<Props> = ({ category, userName, onBack, foodTyp
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedItem, setSelectedItem] = useState<BreakfastItem | null>(null);
   
-  // Voice State
-  const [isListening, setIsListening] = useState(false);
+const { isListening, startListening, stopListening } =
+  useVoiceRecognition(setSearchQuery);
 
   const displayName = userName.trim() || 'Rohit';
   const beverageTabs: BeverageTab[] = ['All', 'Mocktails', 'Cocktails', 'Spirits', 'Beer', 'Wine', 'Hot Beverages', 'Fresh Juice'];
   const healthTabs: HealthTab[] = ['Veg', 'Non Veg'];
-
-  // VOICE SEARCH LOGIC
-  const startVoiceSearch = useCallback(() => {
-    const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
-    
-    if (!SpeechRecognition) {
-      alert("Your browser does not support voice search. Please use Google Chrome.");
-      return;
-    }
-
-    const recognition = new SpeechRecognition();
-    recognition.lang = 'en-US';
-    recognition.continuous = false;
-    recognition.interimResults = false;
-
-    recognition.onstart = () => setIsListening(true);
-    recognition.onend = () => setIsListening(false);
-    recognition.onerror = () => setIsListening(false);
-    
-    recognition.onresult = (event: any) => {
-      const transcript = event.results[0][0].transcript;
-      setSearchQuery(transcript);
-    };
-
-    recognition.start();
-  }, []);
 
   const handleItemClick = (item: BreakfastItem) => {
     setSelectedItem(item);
@@ -106,6 +81,24 @@ const BreakfastDetails: React.FC<Props> = ({ category, userName, onBack, foodTyp
     setTrackResetSignal((prev) => prev + 1);
     setCurrentView("track");
   };
+  const requestMicrophonePermission = async () => {
+    try {
+      await navigator.mediaDevices.getUserMedia({ audio: true });
+      return true;
+    } catch (error) {
+      console.error("Microphone permission denied:", error);
+      alert("Please allow microphone access to use voice search.");
+      return false;
+    }
+  };
+
+  const handleVoiceSearch = async () => {
+    const hasPermission = await requestMicrophonePermission();
+    if (hasPermission) {
+      startListening();
+    }
+  };
+  
 
   if (selectedItem) {
     return (
@@ -177,24 +170,24 @@ const BreakfastDetails: React.FC<Props> = ({ category, userName, onBack, foodTyp
   }
 
   return (
-      <div className="min-h-screen bg-white flex flex-col">
-        {/* Header */}
-        <div className="px-2 pt-9 pb-2 flex justify-between">
-          <button onClick={onBack} className="text-2xl font-medium">
-            <img src={back} alt="back" />
-          </button>
-          <div className="flex gap-3">
-            <ReadyOrderBell
-              hasNotification={hasReadyOrderNotification}
-              ariaLabel="Order notifications"
-              popupText="Order is ready"
-              buttonClassName="flex items-center justify-center"
-              onNotificationClick={() => handleNavChange("track")}
-            >
-              <img src={bell} className="invert h-8" alt="bell" />
-            </ReadyOrderBell>
-          </div>
+    <div className="min-h-screen bg-white flex flex-col">
+      {/* Header */}
+      <div className="px-2 pt-9 pb-2 flex justify-between">
+        <button onClick={onBack} className="text-2xl font-medium">
+          <img src={back} alt="back" />
+        </button>
+        <div className="flex gap-3">
+          <ReadyOrderBell
+            hasNotification={hasReadyOrderNotification}
+            ariaLabel="Order notifications"
+            popupText="Order is ready"
+            buttonClassName="flex items-center justify-center"
+            onNotificationClick={() => handleNavChange("track")}
+          >
+            <img src={bell} className="invert h-8" alt="bell" />
+          </ReadyOrderBell>
         </div>
+      </div>
 
       <div className="flex justify-center">
         <h1 className="text-[24px] font-bold border-b-4 border-orange-400 pb-1">
@@ -220,18 +213,24 @@ const BreakfastDetails: React.FC<Props> = ({ category, userName, onBack, foodTyp
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             placeholder={isListening ? "Listening..." : "Search dishes"}
-            className={`w-full border-b py-2 pl-10 pr-10 text-sm outline-none transition-colors ${isListening ? 'border-orange-500 bg-orange-50' : 'border-gray-200'}`}
+            className={`w-full border-b py-2 pl-10 pr-10 text-sm outline-none transition-colors ${
+              isListening ? "border-orange-500 bg-orange-50" : "border-gray-200"
+            }`}
           />
-          
+
           {/* Voice Button */}
-          <button 
-            onClick={startVoiceSearch}
-            className="absolute right-3 top-1/2 -translate-y-1/2 p-1 rounded-full overflow-hidden"
+          <button
+            type="button"
+            onClick={isListening ? stopListening : startListening}
+            className="absolute right-3 top-1/2 -translate-y-1/2 p-1 rounded-full overflow-hidden hover:bg-gray-100 transition-colors"
+            aria-label="Voice search"
           >
-            <img 
-              src={microphone} 
-              alt="microphone" 
-              className={`w-4 h-4 transition-transform ${isListening ? 'scale-125 animate-bounce' : ''}`} 
+            <img
+              src={microphone}
+              alt="microphone"
+              className={`w-4 h-4 transition-all ${
+                isListening ? "scale-125 text-orange-500" : ""
+              }`}
             />
             {isListening && (
               <div className="absolute inset-0 bg-orange-200 animate-ping opacity-30 rounded-full"></div>

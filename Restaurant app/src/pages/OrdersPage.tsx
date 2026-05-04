@@ -9,6 +9,7 @@ import microphone from "../assets/microphone.svg";
 import Ruppes from '../assets/Ruppes.svg';
 import bell1 from '../assets/bell1.svg'
 import ReadyOrderBell from '../components/ui/ReadyOrderBell';
+import { useVoiceRecognition } from '../hooks/useVoiceRecognition';
 
 interface OrderPageProps {
   onBack: () => void;
@@ -19,7 +20,7 @@ interface OrderPageProps {
 const OrderPage: React.FC<OrderPageProps> = ({ onBack, onConfirmOrder, onViewChange }) => {
   const { orderItems, updateQuantity, removeItem, getTotalPrice, hasReadyOrderNotification } = useOrder();
   const [searchQuery, setSearchQuery] = useState('');
-  const [isListening, setIsListening] = useState(false);
+  const { isListening, startListening } = useVoiceRecognition(setSearchQuery);
   const [isConfirming, setIsConfirming] = useState(false);
   
   // Filter order items based on search query
@@ -59,30 +60,6 @@ const OrderPage: React.FC<OrderPageProps> = ({ onBack, onConfirmOrder, onViewCha
     } finally {
       setIsConfirming(false);
     }
-  };
-
-  const startVoiceSearch = () => {
-    const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
-
-    if (!SpeechRecognition) {
-      alert("Your browser does not support voice search. Please use Google Chrome.");
-      return;
-    }
-
-    const recognition = new SpeechRecognition();
-    recognition.lang = 'en-US';
-    recognition.continuous = false;
-    recognition.interimResults = false;
-
-    recognition.onstart = () => setIsListening(true);
-    recognition.onend = () => setIsListening(false);
-    recognition.onerror = () => setIsListening(false);
-    recognition.onresult = (event: any) => {
-      const transcript = event.results[0][0].transcript;
-      setSearchQuery(transcript);
-    };
-
-    recognition.start();
   };
 
   if (orderItems.length === 0) {
@@ -127,7 +104,7 @@ const OrderPage: React.FC<OrderPageProps> = ({ onBack, onConfirmOrder, onViewCha
               />
               <button
                 type="button"
-                onClick={startVoiceSearch}
+                onClick={startListening}
                 className="absolute right-3 top-1/2 -translate-y-1/2 p-1 rounded-full overflow-hidden"
                 aria-label="Voice search"
               >
@@ -202,7 +179,7 @@ const OrderPage: React.FC<OrderPageProps> = ({ onBack, onConfirmOrder, onViewCha
             />
             <button
               type="button"
-              onClick={startVoiceSearch}
+              onClick={startListening}
               className="absolute right-3 top-1/2 -translate-y-1/2 p-1 rounded-full overflow-hidden"
               aria-label="Voice search"
             >

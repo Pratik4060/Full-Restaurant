@@ -1,4 +1,4 @@
-import React, { useState ,useCallback} from "react";
+import React, { useState } from "react";
 import { useOrder } from "../contexts/OrderContext";
 import type { MealCategory } from "../types";
 import BottomNav from "../components/BottomNav";
@@ -16,6 +16,7 @@ import TrackOrderPage from "./OrderTrackingPage";
 import BillPage from "./BillPage";
 import type { FoodType } from "../types";
 import { useRestaurantCatalog } from '../hooks/useRestaurantCatalog';
+import { useVoiceRecognition } from '../hooks/useVoiceRecognition';
 import { mapPublicLunchItems } from '../lib/catalog';
 import ReadyOrderBell from '../components/ui/ReadyOrderBell';
 interface Props {
@@ -65,7 +66,7 @@ const LunchMenuDetails: React.FC<Props> = ({
   const [selectedItem, setSelectedItem] = useState<
     LunchItem | BreakfastItem | null
   >(null);
-  const [isListening, setIsListening] = useState(false);
+  const { isListening, startListening } = useVoiceRecognition(setSearchQuery);
 
   const beverageTabs: BeverageTab[] = [
     "All",
@@ -138,31 +139,6 @@ const resolvedActiveTab = activeTab;
     setTrackResetSignal((prev) => prev + 1);
     setCurrentView("track");
   };
-    const startVoiceSearch = useCallback(() => {
-      const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
-      
-      if (!SpeechRecognition) {
-        alert("Your browser does not support voice search. Please use Google Chrome.");
-        return;
-      }
-  
-      const recognition = new SpeechRecognition();
-      recognition.lang = 'en-US';
-      recognition.continuous = false;
-      recognition.interimResults = false;
-  
-      recognition.onstart = () => setIsListening(true);
-      recognition.onend = () => setIsListening(false);
-      recognition.onerror = () => setIsListening(false);
-      
-      recognition.onresult = (event: any) => {
-        const transcript = event.results[0][0].transcript;
-        setSearchQuery(transcript);
-      };
-  
-      recognition.start();
-    }, []);
-
   if (selectedItem) {
     return (
       <ItemDetailPage
@@ -280,8 +256,10 @@ const resolvedActiveTab = activeTab;
           />
 
           <button 
-            onClick={startVoiceSearch}
+            type="button"
+            onClick={startListening}
             className="absolute right-3 top-1/2 -translate-y-1/2 p-1 rounded-full overflow-hidden"
+            aria-label="Voice search"
           >
             <img 
               src={microphone} 

@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState, useCallback } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import lunch from '../assets/lunch.svg';
 import Breakfast from '../assets/Breakfast.svg';
 import Dinner1 from '../assets/Dinner1.svg';
@@ -16,6 +16,7 @@ import HomeOfferCarousel from '../components/home/HomeOfferCarousel';
 import HomeSearchPanel from '../components/home/HomeSearchPanel';
 import type { HomeSearchItem } from '../components/home/types';
 import { useRestaurantCatalog } from '../hooks/useRestaurantCatalog';
+import { useVoiceRecognition } from '../hooks/useVoiceRecognition';
 import { mapOffersToHomeOffers, mapPublicBreakfastItems, mapPublicLunchItems } from '../lib/catalog';
 
 interface HomePageProps {
@@ -66,7 +67,9 @@ const HomePage: React.FC<HomePageProps> = ({
   const [searchQuery, setSearchQuery] = useState('');
   const [showInfoModal, setShowInfoModal] = useState(false);
   const [currentMealIdx, setCurrentMealIdx] = useState(getInitialMealIndex);
-  const [isListening, setIsListening] = useState(false);
+
+    const { isListening, startListening, stopListening } =
+      useVoiceRecognition(setSearchQuery);
 
   const activeMealData = foodType === 'Veg' ? VEG_MEAL_DATA : NON_VEG_MEAL_DATA;
   const currentMeal = activeMealData[currentMealIdx];
@@ -113,32 +116,6 @@ const HomePage: React.FC<HomePageProps> = ({
     });
   }, [allSearchItems, searchQuery]);
 
-  // VOICE SEARCH LOGIC
-  const startVoiceSearch = useCallback(() => {
-    const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
-    
-    if (!SpeechRecognition) {
-      alert("Your browser does not support voice search. Please use Google Chrome.");
-      return;
-    }
-
-    const recognition = new SpeechRecognition();
-    recognition.lang = 'en-US';
-    recognition.continuous = false;
-    recognition.interimResults = false;
-
-    recognition.onstart = () => setIsListening(true);
-    recognition.onend = () => setIsListening(false);
-    recognition.onerror = () => setIsListening(false);
-    
-    recognition.onresult = (event: any) => {
-      const transcript = event.results[0][0].transcript;
-      setSearchQuery(transcript);
-    };
-
-    recognition.start();
-  }, []);
-
   useEffect(() => {
     const offerCount = mergedOffers.length;
     if (offerCount === 0) return;
@@ -169,6 +146,15 @@ const HomePage: React.FC<HomePageProps> = ({
     if (selectedOfferTitle === 'Quick Bite Deal') return onOfferSelect({ category: 'Breakfast', focus: 'quick-bites' });
     onOfferSelect({ category: currentMeal.category, focus: 'beverages' });
   };
+  const handleVoiceClick = () => {
+    if (isListening) {
+      stopListening(); // Stop if already listening
+    } else {
+      startListening(); // Start if not listening
+    }
+  };
+
+
 
   return (
   <div className="w-full min-h-screen bg-[#F8F8F8]">
@@ -192,7 +178,7 @@ const HomePage: React.FC<HomePageProps> = ({
               onSearchSelect(item);
             }}
             isListening={isListening}
-            onVoiceClick={startVoiceSearch}
+            onVoiceClick={handleVoiceClick}
           />
         </HomeOfferCarousel>
 
