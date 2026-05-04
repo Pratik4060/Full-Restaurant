@@ -81,23 +81,9 @@ const { isListening, startListening, stopListening } =
     setTrackResetSignal((prev) => prev + 1);
     setCurrentView("track");
   };
-  const requestMicrophonePermission = async () => {
-    try {
-      await navigator.mediaDevices.getUserMedia({ audio: true });
-      return true;
-    } catch (error) {
-      console.error("Microphone permission denied:", error);
-      alert("Please allow microphone access to use voice search.");
-      return false;
-    }
-  };
+  
 
-  const handleVoiceSearch = async () => {
-    const hasPermission = await requestMicrophonePermission();
-    if (hasPermission) {
-      startListening();
-    }
-  };
+  
   
 
   if (selectedItem) {
